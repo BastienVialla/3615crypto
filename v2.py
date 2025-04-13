@@ -6,6 +6,7 @@ from cryptography.hazmat.primitives import hashes, padding
 from cryptography.hazmat.primitives.asymmetric import rsa, ec, padding as asymm_padding
 from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, PublicFormat, NoEncryption
 import hashlib
+import textwrap
     
 WIDTH = 80
 HEXA_CHARS = '0123456789abcdef'
@@ -196,7 +197,7 @@ class App:
             "ECC": ["SECP256R1", "SECP384R1", "SECP521R1"],
         }
         
-        self.output_formats = ["base64", "hex", "base10", "carte perforee"]
+        self.output_formats = ["base64", "hex", "base10"] #, "carte perforee"
         
     def clear_screen(self):
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -204,25 +205,15 @@ class App:
     def print_header(self):
         self.clear_screen()
         logo = '''
-______| |_____________________________________________________________| |_______
-______   _____________________________________________________________   _______
-      | |                                                             | |  
-      | |                 ██████╗  ██████╗ ██╗███████╗                | |  
-      | |                 ╚════██╗██╔════╝███║██╔════╝                | |  
-      | |                  █████╔╝███████╗╚██║███████╗                | |  
-      | |                  ╚═══██╗██╔═══██╗██║╚════██║                | |  
-      | |                 ██████╔╝╚██████╔╝██║███████║                | |  
-      | |                 ╚═════╝  ╚═════╝ ╚═╝╚══════╝                | |  
-      | |                                                             | |  
-      | |      ██████╗██████╗ ██╗   ██╗██████╗ ████████╗ ██████╗      | |  
-      | |     ██╔════╝██╔══██╗╚██╗ ██╔╝██╔══██╗╚══██╔══╝██╔═══██╗     | |  
-      | |     ██║     ██████╔╝ ╚████╔╝ ██████╔╝   ██║   ██║   ██║     | |  
-      | |     ██║     ██╔══██╗  ╚██╔╝  ██╔═══╝    ██║   ██║   ██║     | |  
-      | |     ╚██████╗██║  ██║   ██║   ██║        ██║   ╚██████╔╝     | |  
-      | |      ╚═════╝╚═╝  ╚═╝   ╚═╝   ╚═╝        ╚═╝    ╚═════╝      | |  
-______| |_____________________________________________________________| |_______
-______   _____________________________________________________________   _______
-      | |                                                             | |  
+\t\t             _____  __   _ ____             
+\t\t            |___ / / /_ / | ___|            
+\t\t              |_ \| '_ \| |___ \            
+\t\t             ___) | (_) | |___) |  _        
+\t\t            |____/_\___/|_|____/_ | |_ ___  
+\t\t             / __| '__| | | | '_ \| __/ _ \ 
+\t\t            | (__| |  | |_| | |_) | || (_) |
+\t\t             \___|_|   \__, | .__/ \__\___/ 
+\t\t                       |___/|_|             
         '''
         print(logo)
         # print(" - entrer :q: pour quitter")
@@ -291,11 +282,11 @@ ______   _____________________________________________________________   _______
                 print(f"\n{key_name.upper()}:")
                 print('-'*WIDTH)
                 if isinstance(key_value, str):
-                    print(key_value)
+                    print(textwrap.fill(key_value, width=80))
                 elif isinstance(key_value, dict):
                     for k, v in key_value.items():
                         print(f'{k}:')
-                        print(v)
+                        print(textwrap.fill(v, width=80))
                         
         if any(x in algorithm for x in self.algorithms['Hacher un message.']):
             print("\nMESSAGE HASHE:")
@@ -304,7 +295,9 @@ ______   _____________________________________________________________   _______
             print("\nMESSAGE CHIFFRE:")
             
         print('-'*WIDTH)
-        print(encrypted_message)
+        print(textwrap.fill(encrypted_message, width=80))
+        print('\n')
+        input('Appuyer sur une touche pour continuer...')
         
     def run(self):
         while True:
@@ -393,7 +386,7 @@ ______   _____________________________________________________________   _______
                 print("             Merci d'avoir utilisé l'application de chiffrement!")
                 print('\n')
                 break
-            return
+            # return
         
 if __name__ == "__main__":
     app = App()
