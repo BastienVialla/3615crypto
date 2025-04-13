@@ -2,7 +2,7 @@ import os
 import base64
 import secrets
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives import hashes, padding
+from cryptography.hazmat.primitives import hashes, padding, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, ec, padding as asymm_padding
 from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, PublicFormat, NoEncryption
 import hashlib
@@ -128,6 +128,88 @@ def compute_hashes(message: str, algorithm) -> dict:
         hash = hashlib.sha3_512(message.encode()).digest()
     return hash
 
+def encrypt_ecc(message: str, curve_name: str = "SECP 256 R1") -> dict:
+    """
+    Encrypt a message using ECC + AES hybrid encryption.
+    Returns ECC key components and AES encrypted data.
+
+    Args:
+        message (str): The plaintext message.
+        curve_name (str): ECC curve name. Supported: SECP256R1, SECP384R1, SECP521R1
+
+    Returns:
+        dict: {
+            'ciphertext': bytes,
+            'shared_key': bytes,
+            'private_key_pem': bytes,
+            'public_key_pem': bytes,
+            'private_components': dict,
+            'public_components': dict
+        }
+    """
+    curve_map = {
+        "SECP 256 R1": ec.SECP256R1(),
+        "SECP 384 R1": ec.SECP384R1(),
+        "SECP 521 R1": ec.SECP521R1(),
+    }
+
+    if curve_name not in curve_map:
+        raise ValueError(f"Unsupported curve: {curve_name}")
+
+    curve = curve_map[curve_name]
+
+    # Generate ECC keys
+    private_key = ec.generate_private_key(curve)
+    public_key = private_key.public_key()
+
+    # Extract key numbers
+    priv_numbers = private_key.private_numbers()
+    pub_numbers = public_key.public_numbers()
+
+    private_components = {
+        'private_value': priv_numbers.private_value
+    }
+
+    public_components = {
+        'x': pub_numbers.x,
+        'y': pub_numbers.y,
+        # 'curve': curve_name
+    }
+
+    # Hybrid encryption (AES)
+    aes_key = os.urandom(32)  # AES-256 key
+    iv = os.urandom(16)
+
+    padder = padding.PKCS7(128).padder()
+    padded_data = padder.update(message.encode()) + padder.finalize()
+
+    cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv))
+    encryptor = cipher.encryptor()
+    ciphertext = encryptor.update(padded_data) + encryptor.finalize()
+
+    encrypted_data = iv + ciphertext
+
+    # Simulated shared key (replace with ECDH in real case)
+    shared_key = secrets.token_bytes(32)
+
+    keys = {
+        'cle publique': public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        ),
+        'cle privee': private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        ),
+        'cle partage': shared_key
+    }
+    keys_elements = {
+        'elements cle secrete': private_components,
+        'elements cle publique': public_components
+    }
+    return encrypted_data, keys, keys_elements
+
 def print_card(hexa_str):
     """
     Generates a formatted string representing a card with hexadecimal characters.
@@ -186,7 +268,7 @@ def int_to_bytes(n: int) -> bytes:
 class App:
     def __init__(self):
         self.algorithms = {
-                'Chiffrer un message.': ["AES", "RSA"],
+                'Chiffrer un message.': ["AES", "RSA", "ECC"],
                 'Signer un message.': ["ECC"],
                 'Hacher un message.': ['SHA2-256', 'SHA2-384', 'SHA2-512',
                     'SHA3-256', 'SHA3-384', 'SHA3-512']
@@ -194,7 +276,8 @@ class App:
         self.key_sizes = {
             "AES": [128, 192, 256],
             "RSA": [1024, 2048, 3072, 4096],
-            "ECC": ["SECP256R1", "SECP384R1", "SECP521R1"],
+            "KYBER": [512, 768, 1024],
+            "ECC": ["SECP 256 R1", "SECP 384 R1", "SECP 521 R1"],
         }
         
         self.output_formats = ["base64", "hex", "base10"] #, "carte perforee"
@@ -264,6 +347,8 @@ class App:
                 if output_format == "carte perforee":
                     output_format = "hex"
                 formatted_keys[key_name] = self.format_output(key_value, output_format)
+            elif isinstance(key_value, int):
+                formatted_keys[key_name] = self.format_output(int_to_bytes(key_value), output_format)
             else:
                 # Pour les clés PEM, on garde le format
                 formatted_keys[key_name] = key_value.decode('utf-8') 
@@ -305,7 +390,7 @@ class App:
 
             self.action_choices = [
                     'Chiffrer un message.',
-                    'Signer un message.',
+                    # 'Signer un message.',
                     'Hacher un message.',
                     'Quitter.'
                 ]
@@ -352,20 +437,28 @@ class App:
                     self.display_results(message, formatted_output,
                                          {'cle secrete': formatted_keys_private, 'cle publique': formatted_keys_public}, 
                                          algorithm_string, key_size_string, self.output_formats[output_format])
+                elif algorithm_string == 'ECC':
+                    ciphertext, _, keys_elements = encrypt_ecc(message, key_size_string)
+                    formatted_output = self.format_output(ciphertext, self.output_formats[output_format])
+                    formatted_keys_private = self.format_keys(keys_elements['elements cle secrete'], self.output_formats[output_format])
+                    formatted_keys_public = self.format_keys(keys_elements['elements cle publique'], self.output_formats[output_format])
+                    self.display_results(message, formatted_output,
+                                         {'cle secrete': formatted_keys_private, 'cle publique': formatted_keys_public}, 
+                                         algorithm_string, key_size_string, self.output_formats[output_format])
                     
-            elif action == 1: # Signer
-                algorithm = self.get_user_choice(
-                        message = 'Choisissez un algorithme.',
-                        choices = self.algorithms[action_string]
-                    )
-                algorithm_string = self.algorithms[action_string][algorithm]
-                key_size = self.get_user_choice(
-                        message = 'Choisissez la taille de la clé.',
-                        choices = self.key_sizes[algorithm_string]
-                )
-                key_size_string = self.key_sizes[algorithm_string][key_size]
-                print(f'Signer un message: {algorithm_string} {key_size_string}')
-            elif action == 2: # Hacher
+            # elif action == 1: # Signer
+            #     algorithm = self.get_user_choice(
+            #             message = 'Choisissez un algorithme.',
+            #             choices = self.algorithms[action_string]
+            #         )
+            #     algorithm_string = self.algorithms[action_string][algorithm]
+            #     key_size = self.get_user_choice(
+            #             message = 'Choisissez la taille de la clé.',
+            #             choices = self.key_sizes[algorithm_string]
+            #     )
+            #     key_size_string = self.key_sizes[algorithm_string][key_size]
+            #     print(f'Signer un message: {algorithm_string} {key_size_string}')
+            elif action == 1: # Hacher
                 algorithm = self.get_user_choice(
                         message = 'Choisissez un algorithme.',
                         choices = self.algorithms[action_string]
@@ -381,7 +474,7 @@ class App:
                 formatted_output = self.format_output(hash, self.output_formats[output_format])
                 self.display_results(message, formatted_output, None, algorithm_string, None, self.output_formats[output_format])
                 
-            elif action == 3:
+            elif action == 2:
                 self.print_header()
                 print("             Merci d'avoir utilisé l'application de chiffrement!")
                 print('\n')
