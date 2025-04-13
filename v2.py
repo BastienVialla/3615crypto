@@ -310,7 +310,7 @@ class App:
                     'Quitter.'
                 ]
             
-            self.output_formats = ["base64", "hex", "base10", "carte perforee"]
+            self.output_formats = ["base64", "hex", "base10"]# , "carte perforee"
             
             action = self.get_user_choice(
                 message = 'Que voulez-vous faire?',
