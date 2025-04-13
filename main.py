@@ -9,25 +9,18 @@ from cryptography.hazmat.primitives.asymmetric import rsa, ec, padding as asymm_
 from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, PublicFormat, NoEncryption
 
 try:
-    # Pour Kyber
+    # Import des algorithmes post-quantiques via pqcrypto
     from pqcrypto.kem.kyber import (
         Kyber512, Kyber768, Kyber1024,
         generate_keypair as kyber_generate_keypair,
         encrypt as kyber_encrypt
     )
     
-    # Pour Dilithium
-    # from pqcrypto.sign.dilithium import (
-    #     Dilithium2, Dilithium3, Dilithium5,
-    #     generate_keypair as dilithium_generate_keypair,
-    #     sign as dilithium_sign
-    # )
-    
     PQ_AVAILABLE = True
 except ImportError:
     PQ_AVAILABLE = False
-    print("Note: pqcrypto n'est pas installé. Les algorithmes post-quantiques ne seront pas disponibles.")
-    print("Pour installer: pip install pqcrypto")
+    print("Note: pqcrypto n'est pas installé. Les algorithmes post-quantiques ne sont pas disponibles.")
+    print("Pour l'installer, exécutez : pip install pqcrypto")
 
 WIDTH = 40
 HEXA_CHARS = '0123456789abcdef'
