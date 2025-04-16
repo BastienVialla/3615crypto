@@ -7,12 +7,39 @@ from cryptography.hazmat.primitives.asymmetric import rsa, ec, padding as asymm_
 from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, PublicFormat, NoEncryption
 import hashlib
 import textwrap
+from escpos.printer import Usb
+
+PRINTER = Usb(0x1fc9, 0x2016)
     
 WIDTH = 80
 HEXA_CHARS = '0123456789abcdef'
 
 AES_BLOCK_SIZE = 128  # bits
 AES_IV_SIZE = 16      # bytes
+
+LOGO_PRINT = """
+           _____  __   _ ____             
+          |___ / / /_ / | ___|            
+            |_ \| '_ \| |___ \            
+           ___) | (_) | |___) |  _        
+          |____/_\___/|_|____/_ | |_ ___  
+           / __| '__| | | | '_ \| __/ _ \ 
+          | (__| |  | |_| | |_) | || (_) |
+           \___|_|   \__, | .__/ \__\___/ 
+                     |___/|_|             
+"""
+
+LOGO = '''
+\t\t             _____  __   _ ____             
+\t\t            |___ / / /_ / | ___|            
+\t\t              |_ \| '_ \| |___ \            
+\t\t             ___) | (_) | |___) |  _        
+\t\t            |____/_\___/|_|____/_ | |_ ___  
+\t\t             / __| '__| | | | '_ \| __/ _ \ 
+\t\t            | (__| |  | |_| | |_) | || (_) |
+\t\t             \___|_|   \__, | .__/ \__\___/ 
+\t\t                       |___/|_|             
+        '''
 
 def encrypt_aes(message: str, key_size: int = 256, key: bytes = None) -> tuple[bytes, bytes]:
     """
@@ -183,6 +210,33 @@ def int_to_bytes(n: int) -> bytes:
     # Calculate the number of bytes needed by taking the bit length of n and rounding up
     return n.to_bytes((n.bit_length() + 7) // 8, byteorder='big')
 
+def print_ticket(self, message, encrypted_message, keys, algorithm, key_size, output_format):
+    PRINTER.text(LOGO_PRINT)
+    PRINTER.text(f"Algorithme utilise: {algorithm}")
+    if key_size is not None:
+        PRINTER.text(f"Taille de cle: {key_size}")
+    PRINTER.text(f"Format d'encodage: {output_format}")
+    PRINTER.text(f"Message: {message}")
+    if keys is not None:
+        for key_name, key_value in keys.items():
+            PRINTER.text(f"\n{key_name.upper()}:")
+            if isinstance(key_value, str):
+                PRINTER.text(key_value)
+            elif isinstance(key_value, dict):
+                for k, v in key_value.items():
+                    PRINTER.text(f'{k}:')
+                    PRINTER.text(v)
+                        
+        if any(x in algorithm for x in self.algorithms['Hacher un message.']):
+            PRINTER.text("\nMESSAGE HASHE:")
+        
+        if any(x in algorithm for x in self.algorithms['Chiffrer un message.']):
+            PRINTER.text("\nMESSAGE CHIFFRE:")
+            
+        PRINTER.text(encrypted_message+'\n')
+        PRINTER.cut()
+
+
 class App:
     def __init__(self):
         self.algorithms = {
@@ -204,18 +258,8 @@ class App:
         
     def print_header(self):
         self.clear_screen()
-        logo = '''
-\t\t             _____  __   _ ____             
-\t\t            |___ / / /_ / | ___|            
-\t\t              |_ \| '_ \| |___ \            
-\t\t             ___) | (_) | |___) |  _        
-\t\t            |____/_\___/|_|____/_ | |_ ___  
-\t\t             / __| '__| | | | '_ \| __/ _ \ 
-\t\t            | (__| |  | |_| | |_) | || (_) |
-\t\t             \___|_|   \__, | .__/ \__\___/ 
-\t\t                       |___/|_|             
-        '''
-        print(logo)
+        
+        print(LOGO)
         # print(" - entrer :q: pour quitter")
         # print("=" * WIDTH)
         # print()
@@ -297,7 +341,42 @@ class App:
         print('-'*WIDTH)
         print(textwrap.fill(encrypted_message, width=80))
         print('\n')
-        input('Appuyer sur une touche pour continuer...')
+        while True:
+            choice = input('Imprimer le resultat ? (o/n) ')
+            if choice == "o":
+                self.print_ticket(message, encrypted_message, keys, algorithm, key_size, output_format)
+                input('Appuyer sur entreepour continuer ...')
+                return
+            elif choice == "n":
+                return
+            else:
+                print("Choix invalide choisir o pour oui et n pour non.")
+
+    def print_ticket(self, message, encrypted_message, keys, algorithm, key_size, output_format):
+        PRINTER.text(LOGO_PRINT+'\n')
+        PRINTER.text(f"Algorithme utilise: {algorithm}\n")
+        if key_size is not None:
+            PRINTER.text(f"Taille de cle: {key_size}\n")
+        PRINTER.text(f"Format d'encodage: {output_format}\n" )
+        PRINTER.text(f"Message: {message}")
+        if keys is not None:
+            for key_name, key_value in keys.items():
+                PRINTER.text(f"\n\n{key_name.upper()}:\n")
+                if isinstance(key_value, str):
+                    PRINTER.text(key_value+'\n')
+                elif isinstance(key_value, dict):
+                    for k, v in key_value.items():
+                        PRINTER.text(f'{k}:\n')
+                        PRINTER.text(v+'\n')
+                        
+            if any(x in algorithm for x in self.algorithms['Hacher un message.']):
+                PRINTER.text("\n\nMESSAGE HASHE:\n")
+        
+            if any(x in algorithm for x in self.algorithms['Chiffrer un message.']):
+                PRINTER.text("\n\nMESSAGE CHIFFRE:\n")
+            
+            PRINTER.text(encrypted_message+'\n')
+            PRINTER.cut()
         
     def run(self):
         while True:
