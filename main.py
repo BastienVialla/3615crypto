@@ -1,426 +1,360 @@
+from config import  *
+from logos import *
+from crypto import *
+
+import roman
 import os
 import base64
-# import json
-import secrets
-# import getpass
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives import hashes, padding
-from cryptography.hazmat.primitives.asymmetric import rsa, ec, padding as asymm_padding
-from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, PublicFormat, NoEncryption
+import textwrap
+from datetime import datetime
+import uuid
+from time import sleep
 
-try:
-    # Import des algorithmes post-quantiques via pqcrypto
-    from pqcrypto.kem.kyber import (
-        Kyber512, Kyber768, Kyber1024,
-        generate_keypair as kyber_generate_keypair,
-        encrypt as kyber_encrypt
-    )
+from escpos.printer import LP
+
+PRINTER = LP(printer_name=PRINTER_NAME, autoflush=True)
+
+# --- Constants ---
+ACTIONS_CHOICES = {
+    '1': 'Chiffrer ou dechiffrer un message (Cesar, Vigenere, Enigma)',
+    '2': 'Chiffrer un message (AES, RSA, ECC, El-Gamal)',
+    '3': 'Hacher un message',
+    '4': 'Quitter'
+}
+
+ALGORITHMS = {
+    'classical': {'1': 'Cesar', '2': 'Vigenere', '3': 'Enigma'},
+    'modern': {'1': 'AES', '2': 'RSA', '3': 'ECC', '4': 'El-Gamal'},
+    'hash': {'1': 'SHA-2 256', '2': 'SHA-2 384', '3': 'SHA-2 512',
+             '4': 'SHA-3 256', '5': 'SHA-3 384', '6': 'SHA-3 512'}
+}
+
+KEYS_SIZES = {
+    'AES': {'1': 128, '2': 192, '3': 256},
+    'RSA': {'1': 1024, '2': 2048, '3': 3072, '4': 4096},
+    'ECC': {'1': "SECP 256 R1", '2': "SECP 384 R1", '3': "SECP 521 R1"},
+    'El-Gamal': {'1': 1024, '2': 2048, '3': 3072, '4': 4096}
+}
+
+OUTPUT_FORMAT = {
+    '1': 'Binaire',
+    '2': 'Nombre',
+    '3': 'Hexadecimal',
+    '4': 'Base 64'
+}
+
+def get_base64_uuid():
+    uid = uuid.uuid4().bytes
+    # Add padding if removed
+    return base64.urlsafe_b64encode(uid).rstrip(b'=').decode('ascii')
+
+def display_menu(title, options):
+    """Affiche un menu numéroté à partir d'un dictionnaire."""
+    print(f"\n--- {title} ---")
+    for key, value in options.items():
+        print(f"{key}. {value}")
+    print("-" * (len(title) + 6))
+
+def get_choice(prompt, valid_choices):
+    """Demande à l'utilisateur de faire un choix valide."""
+    while True:
+        choice = input(prompt).strip()
+        if choice in valid_choices:
+            return choice
+        else:
+            print(f"Choix invalide. Veuillez entrer un numéro parmi : {', '.join(valid_choices)}")
+
+def get_message(action="entrer"):
+    """Demande à l'utilisateur d'entrer un message."""
+    print(f"\nVeuillez entrer le message à {action} :")
+    message = input("> ")
+    return message
+
+
+def format_output(data_bytes, format_choice_key):
+    """Met en forme les données binaires selon le choix de l'utilisateur."""
+    format_name = OUTPUT_FORMAT.get(format_choice_key, 'Hexadecimal') # Défaut Hex
+    # print(f"\n--- Résultat (Format: {format_name}) ---")
+    try:
+        if format_name == 'Hexadecimal':
+            return data_bytes.hex()
+        elif format_name == 'Base 64':
+            return base64.b64encode(data_bytes).decode('utf-8')
+        elif format_name == 'Binaire':
+            return ' '.join(format(byte, '08b') for byte in data_bytes)
+        elif format_name == 'Nombre':
+            # Attention: très grand pour les hashs/chiffrements longs
+            n = int.from_bytes(data_bytes, 'big')
+            return f"{n:,}".replace(',', ' ')
+        else:
+            return data_bytes.hex() # Fallback
+    except Exception as e:
+        return f"Erreur lors du formatage : {e}"
+
+def handle_classical():
     
-    PQ_AVAILABLE = True
-except ImportError:
-    PQ_AVAILABLE = False
-    print("Note: pqcrypto n'est pas installé. Les algorithmes post-quantiques ne sont pas disponibles.")
-    print("Pour l'installer, exécutez : pip install pqcrypto")
+    display_menu("Choisissez un algorithme classique", ALGORITHMS['classical'])
+    algo_choice_key = get_choice("Votre choix : ", ALGORITHMS['classical'].keys())
+    algo_name = ALGORITHMS['classical'][algo_choice_key]
 
-WIDTH = 40
-HEXA_CHARS = '0123456789abcdef'
+    # print(f"\nAlgorithme choisi : {algo_name}")
+    
+    display_menu("Action", {'1': 'Chiffrer', '2': 'Déchiffrer'})
+    action_choice = get_choice("Votre choix : ", ['1', '2'])
+    decrypt = (action_choice == '2')
+    action_text = "déchiffrer" if decrypt else "chiffrer"
+    
+    def display_res(ciphertext,  key, algo, decrypt):
+        clear_screen()
+        print(LOGO_HEADER_SCREEN)
+        print('\n')
+        print(f'Algorithme : {algo}')
+        if algo == 'Cesar':
+            print(f'Cle : a={key}')
+        elif algo == 'Vigenere':
+            print(f'Cle : {key}')
+        elif algo == 'Enigma':
+            key_pass = key['key']
+            infos = key['infos']
+            reflector = infos['reflector']
+            rotors = [roman.toRoman(x) for x in infos['rotors']]
+            rotors = ' '.join(rotors)
+            print(f'Configuration :')
+            print(f'  Refecteur: {reflector}')
+            print(f'  Rotors: {rotors}')
+            print(f'Cle : {key_pass}')
+        if decrypt:
+            print(f'Mesage chiffre : {message}')
+            print('\nMESSAGE DECHIFFRE')
+            print('-'*17)
+        else:
+            print(f'Message : {message}')
+            print('\nMESSAGE CHIFFRE')
+            print('-'*15)
+        print(ciphertext)
+        
+    if algo_name == 'Cesar':
+        while True:
+            try:
+                # Note: Une clé de César est un décalage numérique.
+                key = input("Entrez la cle a=")
+                if 'a' <= key <= 'z':
+                    break
+            except ValueError:
+                print("Clé invalide.")
+        message = get_message(action_text)
+        res = caesar_cipher(message, ord(key) - ord('a'), decrypt)
+    elif algo_name == 'Vigenere':
+        while True:
+            # Note: Une clé Vigenère est un mot ou une phrase.
+            key = input("Entrez la clé (mot/phrase, ex: 'crypto') : ").strip()
+            if key and key.isalpha(): # Simple validation: que des lettres
+                break
+            else:
+                print("Clé invalide. Veuillez entrer un mot composé uniquement de lettres.")
+        message = get_message(action_text)
+        res = vigenere_cipher(message, key, decrypt)
+    elif algo_name == 'Enigma':
+        while True:
+            # Note: Une clé Vigenère est un mot ou une phrase.
+            key = input("Entrez la clé composé de 3 lettres (ex. ERT) : ").strip()
+            if key and key.isalpha() and len(key) == 3: # Simple validation: que des lettres
+                break
+            else:
+                print("Clé invalide. Veuillez entrer un mot composé uniquement de lettres.")
+        key = key.upper()
+        message = get_message(action_text)
+        infos, res = enigma_cipher(message, key)
+        key = {'key': key, 'infos': infos}
+        
+        display_res(res, key, algo_name, decrypt)
+        
+        input('\n\nAppuyer sur entree pour continuer ...')
+        clear_screen()
+        
+    
+def handle_modern():
+    display_menu("Choisissez un algorithme", ALGORITHMS['modern'])
+    algo_choice_key = get_choice("Votre choix : ", ALGORITHMS['modern'].keys())
+    algo_name = ALGORITHMS['modern'][algo_choice_key]
+    
+    key_param = None
+    if algo_name in KEYS_SIZES:
+        display_menu(f"Choisissez la taille/type de clé pour {algo_name}", KEYS_SIZES[algo_name])
+        key_choice = get_choice("Votre choix : ", KEYS_SIZES[algo_name].keys())
+        key_param = KEYS_SIZES[algo_name][key_choice]
+        # print(f"Paramètre de clé choisi : {key_param}")
+    else:
+        # Certains algos pourraient ne pas avoir de taille de clé sélectionnable ici
+        print(f"(!) Pas de sélection de taille de clé pour {algo_name} dans cette démo.")
+        # On pourrait définir une taille par défaut ou demander autrement
+        
+    message = get_message("chiffrer")
+    
+    def display_res(message, res, algo, key_param, keys, output_format):
+        clear_screen()
+        print(LOGO_HEADER_SCREEN)
+        print('\n')
+        print(f'Algorithme : {algo}')
+        print(f'Taille de la cle : {key_param}')
+        print(f"Format d'encodage: {OUTPUT_FORMAT[str(output_format)]}")
+        print(f"Message: {textwrap.fill(message, width=MINITEL_SCREEN_WHIDTH)}")
+        
+        if keys is not None:
+            for key_name, key_value in keys.items():
+                print(f"\n{key_name.upper()}:")
+                if isinstance(key_value, dict):
+                    for k, v in key_value.items():
+                        text_formated = format_output(v, output_format)
+                        print(f'{k}:')
+                        print(textwrap.fill(text_formated, width=80))
+                else:
+                    text_formated = format_output(key_value, output_format)
+                    print(textwrap.fill(text_formated, width=80))
+        
+        print("\n\nMESSAGE CHIFFRE:")
+        if isinstance(res, dict):
+            for k, v in res.items():
+                text_formated = format_output(v, output_format)
+                print(f'{k}:')
+                print(textwrap.fill(text_formated, width=80))
+        else:
+            text_formated = format_output(res, output_format)
+            print(textwrap.fill(text_formated, width=80))
+        print('\n')
+    
+    res = None
+    if algo_name == 'AES':
+        res, keys = encrypt_aes(message, key_param)
+        
+    elif algo_name == 'RSA':
+        res, _, keys = encrypt_rsa(message, key_param)
+        
+    elif algo_name == 'ECC':
+        res, keys, _ = encrypt_ecc(message, key_param)
+    elif algo_name == 'El-Gamal':
+        res, _, keys = encrypt_elgamal(message, key_param)
+    
+    display_menu("Choisissez un format de sortie du hash", OUTPUT_FORMAT)
+    format_choice = get_choice("Votre choix : ", OUTPUT_FORMAT.keys())
+    
+    display_res(message, res, algo_name, key_param, keys, format_choice)
+    while True:
+        choice = input('Imprimer le resultat ? (o/n) ')
+        if choice == "o":
+            print_ticket(algo_name, message, res, key_param, keys, format_choice)
+            input('Appuyer sur entree pour continuer ...')
+            return
+        elif choice == "n":
+            return
+        else:
+            print("Choix invalide choisir o pour oui et n pour non.")
 
-class EncryptionApp:
-    def __init__(self):
-        self.algorithms = ["AES", "RSA", "ECC"]
-        if PQ_AVAILABLE:
-            self.algorithms.extend(["KYBER"])#, "DILITHIUM"
-        self.key_sizes = {
-            "AES": [128, 192, 256],
-            "RSA": [1024, 2048, 3072, 4096],
-            "ECC": ["SECP256R1", "SECP384R1", "SECP521R1"]
-        }
-        if PQ_AVAILABLE:
-            self.key_sizes.update({
-                "KYBER": ["KYBER512", "KYBER768", "KYBER1024"],
-                # "DILITHIUM": ["DILITHIUM2", "DILITHIUM3", "DILITHIUM5"]
-            })
+def handle_hash():
+    display_menu("Choisissez un algorithme de hachage", ALGORITHMS['hash'])
+    algo_choice_key = get_choice("Votre choix : ", ALGORITHMS['hash'].keys())
+    algo_name = ALGORITHMS['hash'][algo_choice_key]
+
+    # print(f"\nAlgorithme choisi : {algo_name}")
+
+    message = get_message("hacher")
+    result_bytes = compute_hashes(message, algo_name)
+    
+    if result_bytes is not None:
+        formatted_result = format_output(result_bytes, 3)
         
-        self.output_formats = ["base64", "hex", "base10", "carte perforée"]
+        clear_screen()
+        print(LOGO_HEADER_SCREEN)
+        print('\n')
+        print(f'Algorithme : {algo_name}')
+        print(f'Message : {message}\n')
+        print('-'*MINITEL_SCREEN_WHIDTH)
+        print('\nMESSAGE HACHE')
+        print(formatted_result)
+        print('\n')
         
-    def clear_screen(self):
+        while True:
+            choice = input('Imprimer le resultat ? (o/n) ')
+            if choice == "o":
+                print_ticket(algo_name, message, formatted_result)
+                input('Appuyer sur entree pour continuer ...')
+                return
+            elif choice == "n":
+                return
+            else:
+                print("Choix invalide choisir o pour oui et n pour non.")
+        
+def print_ticket(algo, message, ciphertext, keys_param = None, keys = None, format = None, decrypt = None):
+    current_datetime = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+    PRINTER.set(align='left', font='a', width=1, height=1)
+    PRINTER.text('\n')
+    PRINTER.text('\n')
+    PRINTER.text('\n')
+    sleep(.5)
+    PRINTER.text(LOGO_HEADER_PRINTER)
+    PRINTER.text('\n\n')
+    PRINTER.text(f'Algorithme : {algo}\n')
+    if keys_param is not None:
+        PRINTER.text(f'Taille de la cle : {keys_param}\n')
+    if format is not None:
+        PRINTER.text(f'Format : {OUTPUT_FORMAT[str(format)]}\n')
+    PRINTER.text(f'Message : {message}\n')
+    if keys is not None:
+        for key_name, key_value in keys.items():
+            PRINTER.text(f"\n\n{key_name.upper()}\n")
+            if isinstance(key_value, dict):
+                for k, v in key_value.items():
+                    text_formated = format_output(v, format)
+                    PRINTER.text(f'{k}\n')
+                    PRINTER.text(text_formated.replace(' ', '')+'\n')
+            else:
+                text_formated = format_output(key_value, format)
+                PRINTER.text(text_formated.replace(' ', '')+'\n')
+    if keys_param is None:
+        PRINTER.text('\n\nMESSAGE HACHE\n')
+    else:
+        PRINTER.text('\n\nMESSAGE CHIFFRE\n')
+    if isinstance(ciphertext, dict):
+        for k, v in ciphertext.items():
+            text_formated = format_output(v, format)
+            PRINTER.text(f'{k}:\n')
+            PRINTER.text(textwrap.fill(text_formated.replace(' ', ''), width=48)+'\n\n')
+    else:
+        if format is not None:
+            text_formated = format_output(ciphertext, format)
+            PRINTER.text(textwrap.fill(text_formated.replace(' ', ''), width=48)+'\n\n')
+        else:
+            PRINTER.text(textwrap.fill(ciphertext.replace(' ', ''), width=48) + '\n\n')
+    PRINTER.text('-'*48+'\n')
+    PRINTER.text('\n'+current_datetime+'\t  '+ get_base64_uuid())
+    PRINTER.cut()
+    PRINTER.flush()
+
+def clear_screen():
         os.system('cls' if os.name == 'nt' else 'clear')
 
-    def print_header(self):
-        self.clear_screen()
-        print("=" * WIDTH)
-        print("               3615 CRYPTO")
-        print("-" * WIDTH)
-        if PQ_AVAILABLE:
-            print(" - post-quantique disponible")
+def run():
+    while True:
+        clear_screen()
+        print(LOGO_HEADER_SCREEN)
+        display_menu("Que voulez-vous faire ?", ACTIONS_CHOICES)
+        action_choice_key = get_choice("Votre choix : ", ACTIONS_CHOICES.keys())
+
+        if action_choice_key == '1': # Cryptographie classique
+            handle_classical()
+        elif action_choice_key == '2': # Cryptographie moderne
+            handle_modern()
+        elif action_choice_key == '3': # Hachage
+            handle_hash()
+        elif action_choice_key == '4': # Quitter
+            clear_screen()
+            print(LOGO_HEADER_SCREEN)
+            print("             Merci d'avoir utilisé l'application de chiffrement!")
+            break
+            
         else:
-            print(" - post-quantique non disponible")
-        print(" - entrer :q: pour quitter")
-        print("=" * WIDTH)
-        print()
-
-    def get_user_input(self):
-        self.print_header()
-        
-        # Message à chiffrer
-        message = input("Entrez le message à chiffrer: ")
-        if message == ':q:':
-            return message, None, None, None
-        
-        # Choix de l'algorithme
-        print("\nAlgorithmes disponibles:")
-        for i, algo in enumerate(self.algorithms, 1):
-            print(f"{i}. {algo}")
-        
-        while True:
-            try:
-                max_choice = len(self.algorithms)
-                choice = int(input(f"\nChoisissez un algorithme (1-{max_choice}): "))
-                if 1 <= choice <= max_choice:
-                    algorithm = self.algorithms[choice-1]
-                    break
-                else:
-                    print(f"Choix invalide. Veuillez choisir entre 1 et {max_choice}.")
-            except ValueError:
-                print("Veuillez entrer un nombre.")
-        
-        # Choix de la taille de clé
-        print(f"\nTailles de clé disponibles pour {algorithm}:")
-        for i, size in enumerate(self.key_sizes[algorithm], 1):
-            print(f"{i}. {size}")
-        
-        while True:
-            try:
-                choice = int(input(f"\nChoisissez une taille de clé (1-{len(self.key_sizes[algorithm])}): "))
-                if 1 <= choice <= len(self.key_sizes[algorithm]):
-                    key_size = self.key_sizes[algorithm][choice-1]
-                    break
-                else:
-                    print(f"Choix invalide. Veuillez choisir entre 1 et {len(self.key_sizes[algorithm])}.")
-            except ValueError:
-                print("Veuillez entrer un nombre.")
-        
-        # Choix du format de sortie
-        print("\nFormats d'encodage disponibles:")
-        for i, fmt in enumerate(self.output_formats, 1):
-            print(f"{i}. {fmt}")
-        
-        while True:
-            try:
-                max_choice = len(self.output_formats)
-                choice = int(input(f"\nChoisissez un format d'encodage (1-{max_choice}): "))
-                if 1 <= choice <= max_choice:
-                    output_format = self.output_formats[choice-1]
-                    break
-                else:
-                    print(f"Choix invalide. Veuillez choisir entre 1 et {max_choice}.")
-            except ValueError:
-                print("Veuillez entrer un nombre.")
-        
-        return message, algorithm, key_size, output_format
-
-    def encrypt_aes(self, message, key_size):
-        # Générer une clé AES de la taille spécifiée
-        key = os.urandom(key_size // 8)  # Convertir bits en octets
-        
-        # Générer un IV (vecteur d'initialisation)
-        iv = os.urandom(16)  # AES utilise un bloc de 16 octets
-        
-        # Préparer le message (padding)
-        padder = padding.PKCS7(128).padder()
-        padded_data = padder.update(message.encode()) + padder.finalize()
-        
-        # Chiffrer le message
-        cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
-        encryptor = cipher.encryptor()
-        ciphertext = encryptor.update(padded_data) + encryptor.finalize()
-        
-        # Concaténer l'IV et le texte chiffré pour le déchiffrement ultérieur
-        encrypted = iv + ciphertext
-        
-        return encrypted, {"clé": key}
-
-    def encrypt_rsa(self, message, key_size):
-        # Générer une paire de clés RSA
-        private_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=key_size
-        )
-        public_key = private_key.public_key()
-        
-        # Chiffrer le message avec la clé publique
-        encrypted = public_key.encrypt(
-            message.encode(),
-            asymm_padding.OAEP(
-                mgf=asymm_padding.MGF1(algorithm=hashes.SHA256()),
-                algorithm=hashes.SHA256(),
-                label=None
-            )
-        )
-        
-        # Sérialiser les clés pour l'affichage
-        private_key_pem = private_key.private_bytes(
-            encoding=Encoding.PEM,
-            format=PrivateFormat.PKCS8,
-            encryption_algorithm=NoEncryption()
-        )
-        
-        public_key_pem = public_key.public_bytes(
-            encoding=Encoding.PEM,
-            format=PublicFormat.SubjectPublicKeyInfo
-        )
-        
-        return encrypted, {"cle secrete": private_key_pem, "cle publique": public_key_pem}
-
-    def encrypt_ecc(self, message, curve_name):
-        # Convertir le nom de courbe en paramètre approprié
-        curve_map = {
-            "SECP256R1": ec.SECP256R1(),
-            "SECP384R1": ec.SECP384R1(),
-            "SECP521R1": ec.SECP521R1()
-        }
-        curve = curve_map[curve_name]
-        
-        # Générer une paire de clés ECC
-        private_key = ec.generate_private_key(curve)
-        public_key = private_key.public_key()
-        
-        # Pour ECC, nous utilisons un chiffrement hybride (ECIES simplifié)
-        # Générer une clé AES temporaire
-        aes_key = os.urandom(32)  # Clé AES-256
-        iv = os.urandom(16)
-        
-        # Chiffrer le message avec AES
-        padder = padding.PKCS7(128).padder()
-        padded_data = padder.update(message.encode()) + padder.finalize()
-        
-        cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv))
-        encryptor = cipher.encryptor()
-        ciphertext = encryptor.update(padded_data) + encryptor.finalize()
-        
-        # Dériver une clé partagée (simulée ici pour simplifier)
-        # En pratique, on échangerait des clés avec ECDH
-        shared_key = secrets.token_bytes(32)
-        
-        # Sérialiser les clés pour l'affichage
-        private_key_pem = private_key.private_bytes(
-            encoding=Encoding.PEM,
-            format=PrivateFormat.PKCS8,
-            encryption_algorithm=NoEncryption()
-        )
-        
-        public_key_pem = public_key.public_bytes(
-            encoding=Encoding.PEM,
-            format=PublicFormat.SubjectPublicKeyInfo
-        )
-        
-        # Concaténer IV et texte chiffré
-        encrypted = iv + ciphertext
-        
-        return encrypted, {
-            "clé secrète": private_key_pem, 
-            "clé publique": public_key_pem,
-            #"clé partagé": shared_key
-        }
-        
-    def encrypt_kyber(self, message, kyber_variant):
-        if not PQ_AVAILABLE:
-            raise ImportError("Module pqcrypto non installé!")
-        
-        # Choisir la variante de Kyber
-        if kyber_variant == "KYBER512":
-            variant = Kyber512
-        elif kyber_variant == "KYBER768":
-            variant = Kyber768
-        elif kyber_variant == "KYBER1024":
-            variant = Kyber1024
-        
-        # Générer les clés
-        public_key, private_key = kyber_generate_keypair(variant)
-        
-        # Kyber est un système KEM (Key Encapsulation Mechanism)
-        # qui produit une clé secrète partagée et un texte chiffré
-        shared_secret, ciphertext = kyber_encrypt(public_key, variant)
-        
-        # Utiliser cette clé partagée pour chiffrer le message avec AES
-        # Cette approche hybride est courante car Kyber est un KEM, pas un système de chiffrement direct
-        key = shared_secret[:32]  # Utiliser 32 octets pour AES-256
-        iv = os.urandom(16)
-        
-        # Chiffrer avec AES
-        padder = padding.PKCS7(128).padder()
-        padded_data = padder.update(message.encode()) + padder.finalize()
-        
-        cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
-        encryptor = cipher.encryptor()
-        message_ciphertext = encryptor.update(padded_data) + encryptor.finalize()
-        
-        # Concaténer l'IV, le ciphertext Kyber et le message chiffré AES
-        # Format: [Kyber ciphertext length (4 bytes)][Kyber ciphertext][IV][AES encrypted message]
-        kyber_len = len(ciphertext).to_bytes(4, byteorder='big')
-        encrypted = kyber_len + ciphertext + iv + message_ciphertext
-        
-        return encrypted, {
-            "clé publqiue": public_key,
-            "clé sécrète": private_key,
-            # "shared_secret": shared_secret
-        }
-    
-    # def encrypt_dilithium(self, message, dilithium_variant):
-    #     if not PQ_AVAILABLE:
-    #         raise ImportError("Module pqcrypto non installé!")
-        
-    #     # Choisir la variante de Dilithium
-    #     if dilithium_variant == "DILITHIUM2":
-    #         variant = Dilithium2
-    #     elif dilithium_variant == "DILITHIUM3":
-    #         variant = Dilithium3
-    #     elif dilithium_variant == "DILITHIUM5":
-    #         variant = Dilithium5
-        
-    #     # Générer les clés
-    #     public_key, private_key = dilithium_generate_keypair(variant)
-        
-    #     # Dilithium est un schéma de signature, pas de chiffrement
-    #     # On va donc signer le message, puis le chiffrer avec AES pour montrer les deux aspects
-    #     signature = dilithium_sign(message.encode(), private_key, variant)
-        
-    #     # Chiffrer le message avec AES pour démontrer la confidentialité
-    #     key = os.urandom(32)
-    #     iv = os.urandom(16)
-        
-    #     padder = padding.PKCS7(128).padder()
-    #     padded_data = padder.update(message.encode()) + padder.finalize()
-        
-    #     cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
-    #     encryptor = cipher.encryptor()
-    #     ciphertext = encryptor.update(padded_data) + encryptor.finalize()
-        
-    #     # Format: [Signature length (4 bytes)][Signature][IV][AES encrypted message]
-    #     sig_len = len(signature).to_bytes(4, byteorder='big')
-    #     encrypted = sig_len + signature + iv + ciphertext
-        
-    #     return encrypted, {
-    #         "public_key": public_key,
-    #         "private_key": private_key,
-    #         "aes_key": key,
-    #         "signature": signature
-    #     }
-        
-    def print_card(self, encrypted_message_hexa):
-        top_line = ' '.join(list(HEXA_CHARS))
-        res = '   ' + top_line
-        res += '\n'
-        
-        for c in encrypted_message_hexa:
-            line = c + '  '
-            for c_line in top_line:
-                if c == c_line:
-                    line += '▮'.upper()
-                else:
-                    line += ' '
-            res += line
-            res += '\n'
-        return res    
-    
-    def format_output(self, data, output_format):
-        if output_format == "base64":
-            return base64.b64encode(data).decode('utf-8')
-        elif output_format == "hex":
-            return data.hex()
-        elif output_format == "base10":
-            # Convertir en base 10 (représentation décimale des octets)
-            return ' '.join([str(b) for b in data])
-        elif output_format == "carte perforée":
-            return self.print_card(data.hex()) 
-        
-    def format_keys(self, keys, output_format):
-        formatted_keys = {}
-        
-        for key_name, key_value in keys.items():
-            if isinstance(key_value, bytes):
-                if output_format == "carte perforée":
-                    output_format = "hex"
-                formatted_keys[key_name] = self.format_output(key_value, output_format)
-            else:
-                # Pour les clés PEM, on garde le format
-                formatted_keys[key_name] = key_value.decode('utf-8')
-                
-        return formatted_keys
-
-    def encrypt(self, message, algorithm, key_size, output_format):
-        if algorithm == "AES":
-            encrypted, keys = self.encrypt_aes(message, key_size)
-        elif algorithm == "RSA":
-            encrypted, keys = self.encrypt_rsa(message, key_size)
-        elif algorithm == "ECC":
-            encrypted, keys = self.encrypt_ecc(message, key_size)
-        elif algorithm == "KYBER" and PQ_AVAILABLE:
-            encrypted, keys = self.encrypt_kyber(message, key_size)
-        else:
-            raise ValueError(f"Algorithme non supporté: {algorithm}")
-        # elif algorithm == "DILITHIUM" and PQ_AVAILABLE:
-        #     encrypted, keys = self.encrypt_dilithium(message, key_size)
-        
-        # Formater le résultat chiffré selon le format demandé
-        formatted_output = self.format_output(encrypted, output_format)
-        
-        # Formater les clés selon le format demandé
-        formatted_keys = self.format_keys(keys, output_format)
-        
-        return formatted_output, formatted_keys
-        
-
-    def display_results(self, message, encrypted_message, keys, algorithm, key_size, output_format):
-        self.print_header()
-        print(f"Algorithme utilisé: {algorithm}")
-        print(f"Taille de clé: {key_size}")
-        print(f"Format d'encodage: {output_format}")
-        print(f"Message: {message}")
-        # print("\n" + "=" * WIDTH)
-        
-        # if len(keys) == 2:
-        #     print("\nCLÉS GÉNÉRÉES:")
-        # elif len(keys) == 1:
-        #     print("\nCLÉ GÉNÉRÉE:")
-        # print("-" * 60)
-        
-        for key_name, key_value in keys.items():
-            print(f"\n{key_name.upper()}:")
-            print("-" * 40)
-            print(key_value)
-        
-        # print("\n" + "=" * WIDTH)
-        print("\nMESSAGE CHIFFRÉ:")
-        print("-" * WIDTH)
-        print(encrypted_message)
-        # print("\n" + "=" * WIDTH)
-        
-        input("\nAppuyez sur Entrée pour continuer...")
-
-    def run(self):
-        while True:
-            # Obtenir les entrées utilisateur
-            message, algorithm, key_size, output_format = self.get_user_input()
-            if message == ":q:":
-                self.print_header()
-                print("Merci d'avoir utilisé l'application de chiffrement!")
-                break
-            
-            # Chiffrer le message
-            encrypted_message, keys = self.encrypt(message, algorithm, key_size, output_format)
-            
-            # Afficher les résultats
-            self.display_results(message, encrypted_message, keys, algorithm, key_size, output_format)
-            
-            # Demander si l'utilisateur veut continuer
-            self.print_header()
-            # choice = input("Voulez-vous chiffrer un autre message ? (o/n): ")
-            # if choice.lower() != 'o':
-            #     self.print_header()
-            #     print("Merci d'avoir utilisé l'application de chiffrement!")
-            #     break
+            # Ne devrait pas arriver grâce à get_choice, mais par sécurité
+            print("Choix d'action principal invalide.")
 
 if __name__ == "__main__":
-    app = EncryptionApp()
-    app.run()
+    run()
