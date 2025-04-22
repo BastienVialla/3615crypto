@@ -206,10 +206,10 @@ def handle_modern():
         print('\n')
         print(f'Algorithme : {algo}')
         print(f'Taille de la cle : {key_param}')
-        output_format = OUTPUT_FORMAT[str(output_format)]
-        print(f"Format d'encodage: {output_format}")
+        output_format_str = OUTPUT_FORMAT[str(output_format)]
+        print(f"Format d'encodage: {output_format_str}")
         print(f"Message: {textwrap.fill(message, width=MINITEL_SCREEN_WHIDTH)}")
-        write_log(f'{algo}, {key_param}, {message}, {output_format}')
+        write_log(f'{algo}, {key_param}, {message}, {output_format_str}')
         if keys is not None:
             for key_name, key_value in keys.items():
                 print(f"\n{key_name.upper()}:")
