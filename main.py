@@ -49,32 +49,32 @@ def get_base64_uuid():
     return base64.urlsafe_b64encode(uid).rstrip(b'=').decode('ascii')
 
 def display_menu(title, options):
-    """Affiche un menu numéroté à partir d'un dictionnaire."""
+    """Affiche un menu numerote a partir d'un dictionnaire."""
     print(f"\n--- {title} ---")
     for key, value in options.items():
         print(f"{key}. {value}")
     print("-" * (len(title) + 6))
 
 def get_choice(prompt, valid_choices):
-    """Demande à l'utilisateur de faire un choix valide."""
+    """Demande a l'utilisateur de faire un choix valide."""
     while True:
         choice = input(prompt).strip()
         if choice in valid_choices:
             return choice
         else:
-            print(f"Choix invalide. Veuillez entrer un numéro parmi : {', '.join(valid_choices)}")
+            print(f"Choix invalide. Veuillez entrer un numero parmi : {', '.join(valid_choices)}")
 
 def get_message(action="entrer"):
-    """Demande à l'utilisateur d'entrer un message."""
-    print(f"\nVeuillez entrer le message à {action} :")
+    """Demande a l'utilisateur d'entrer un message."""
+    print(f"\nVeuillez entrer le message a {action} :")
     message = input("> ")
     return message
 
 
 def format_output(data_bytes, format_choice_key):
-    """Met en forme les données binaires selon le choix de l'utilisateur."""
-    format_name = OUTPUT_FORMAT.get(format_choice_key, 'Hexadecimal') # Défaut Hex
-    # print(f"\n--- Résultat (Format: {format_name}) ---")
+    """Met en forme les donnees binaires selon le choix de l'utilisateur."""
+    format_name = OUTPUT_FORMAT.get(format_choice_key, 'Hexadecimal') # Defaut Hex
+    # print(f"\n--- Resultat (Format: {format_name}) ---")
     try:
         if format_name == 'Hexadecimal':
             return data_bytes.hex()
@@ -83,7 +83,7 @@ def format_output(data_bytes, format_choice_key):
         elif format_name == 'Binaire':
             return ' '.join(format(byte, '08b') for byte in data_bytes)
         elif format_name == 'Nombre':
-            # Attention: très grand pour les hashs/chiffrements longs
+            # Attention: tres grand pour les hashs/chiffrements longs
             n = int.from_bytes(data_bytes, 'big')
             return f"{n:,}".replace(',', ' ')
         else:
@@ -99,10 +99,10 @@ def handle_classical():
 
     # print(f"\nAlgorithme choisi : {algo_name}")
     
-    display_menu("Action", {'1': 'Chiffrer', '2': 'Déchiffrer'})
+    display_menu("Action", {'1': 'Chiffrer', '2': 'Dechiffrer'})
     action_choice = get_choice("Votre choix : ", ['1', '2'])
     decrypt = (action_choice == '2')
-    action_text = "déchiffrer" if decrypt else "chiffrer"
+    action_text = "dechiffrer" if decrypt else "chiffrer"
     
     def display_res(ciphertext,  key, algo, decrypt):
         clear_screen()
@@ -136,32 +136,32 @@ def handle_classical():
     if algo_name == 'Cesar':
         while True:
             try:
-                # Note: Une clé de César est un décalage numérique.
+                # Note: Une cle de Cesar est un decalage numerique.
                 key = input("Entrez la cle a=")
                 if 'a' <= key <= 'z':
                     break
             except ValueError:
-                print("Clé invalide.")
+                print("Cle invalide.")
         message = get_message(action_text)
         res = caesar_cipher(message, ord(key) - ord('a'), decrypt)
     elif algo_name == 'Vigenere':
         while True:
-            # Note: Une clé Vigenère est un mot ou une phrase.
-            key = input("Entrez la clé (mot/phrase, ex: 'crypto') : ").strip()
+            # Note: Une cle Vigenere est un mot ou une phrase.
+            key = input("Entrez la cle (mot/phrase, ex: 'crypto') : ").strip()
             if key and key.isalpha(): # Simple validation: que des lettres
                 break
             else:
-                print("Clé invalide. Veuillez entrer un mot composé uniquement de lettres.")
+                print("Cle invalide. Veuillez entrer un mot compose uniquement de lettres.")
         message = get_message(action_text)
         res = vigenere_cipher(message, key, decrypt)
     elif algo_name == 'Enigma':
         while True:
-            # Note: Une clé Vigenère est un mot ou une phrase.
-            key = input("Entrez la clé composé de 3 lettres (ex. ERT) : ").strip()
+            # Note: Une cle Vigenere est un mot ou une phrase.
+            key = input("Entrez la cle compose de 3 lettres (ex. ERT) : ").strip()
             if key and key.isalpha() and len(key) == 3: # Simple validation: que des lettres
                 break
             else:
-                print("Clé invalide. Veuillez entrer un mot composé uniquement de lettres.")
+                print("Cle invalide. Veuillez entrer un mot compose uniquement de lettres.")
         key = key.upper()
         message = get_message(action_text)
         infos, res = enigma_cipher(message, key)
@@ -180,14 +180,14 @@ def handle_modern():
     
     key_param = None
     if algo_name in KEYS_SIZES:
-        display_menu(f"Choisissez la taille/type de clé pour {algo_name}", KEYS_SIZES[algo_name])
+        display_menu(f"Choisissez la taille/type de cle pour {algo_name}", KEYS_SIZES[algo_name])
         key_choice = get_choice("Votre choix : ", KEYS_SIZES[algo_name].keys())
         key_param = KEYS_SIZES[algo_name][key_choice]
-        # print(f"Paramètre de clé choisi : {key_param}")
+        # print(f"Parametre de cle choisi : {key_param}")
     else:
-        # Certains algos pourraient ne pas avoir de taille de clé sélectionnable ici
-        print(f"(!) Pas de sélection de taille de clé pour {algo_name} dans cette démo.")
-        # On pourrait définir une taille par défaut ou demander autrement
+        # Certains algos pourraient ne pas avoir de taille de cle selectionnable ici
+        print(f"(!) Pas de selection de taille de cle pour {algo_name} dans cette demo.")
+        # On pourrait definir une taille par defaut ou demander autrement
         
     message = get_message("chiffrer")
     
@@ -349,11 +349,11 @@ def run():
         elif action_choice_key == '4': # Quitter
             clear_screen()
             print(LOGO_HEADER_SCREEN)
-            print("             Merci d'avoir utilisé l'application de chiffrement!")
+            print("             Merci d'avoir utilise l'application de chiffrement!")
             break
             
         else:
-            # Ne devrait pas arriver grâce à get_choice, mais par sécurité
+            # Ne devrait pas arriver grâce a get_choice, mais par securite
             print("Choix d'action principal invalide.")
 
 if __name__ == "__main__":
