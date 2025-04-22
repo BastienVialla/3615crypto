@@ -1,6 +1,7 @@
 from config import  *
 from logos import *
 from crypto import *
+from logs import write_counters, read_counters, write_log
 
 import roman
 import os
@@ -13,6 +14,7 @@ from time import sleep
 from escpos.printer import LP
 
 PRINTER = LP(printer_name=PRINTER_NAME, autoflush=True)
+N_USE, N_PRINT = read_counters(COUNTER_FILE)
 
 # --- Constants ---
 ACTIONS_CHOICES = {
@@ -104,15 +106,19 @@ def handle_classical():
     decrypt = (action_choice == '2')
     action_text = "dechiffrer" if decrypt else "chiffrer"
     
-    def display_res(ciphertext,  key, algo, decrypt):
+    def display_res(ciphertext, message, key, algo, decrypt):
+        global N_USE
+        N_USE += 1
         clear_screen()
         print(LOGO_HEADER_SCREEN)
         print('\n')
         print(f'Algorithme : {algo}')
         if algo == 'Cesar':
             print(f'Cle : a={key}')
+            write_log(f'{algo}, {key}, {message},')
         elif algo == 'Vigenere':
             print(f'Cle : {key}')
+            write_log(f'{algo}, {key}, {message},')
         elif algo == 'Enigma':
             key_pass = key['key']
             infos = key['infos']
@@ -123,6 +129,7 @@ def handle_classical():
             print(f'  Refecteur: {reflector}')
             print(f'  Rotors: {rotors}')
             print(f'Cle : {key_pass}')
+            write_log(f'{algo}, [{rotors},{reflector}], {message},')
         if decrypt:
             print(f'Mesage chiffre : {message}')
             print('\nMESSAGE DECHIFFRE')
@@ -167,7 +174,7 @@ def handle_classical():
         infos, res = enigma_cipher(message, key)
         key = {'key': key, 'infos': infos}
         
-        display_res(res, key, algo_name, decrypt)
+        display_res(res, message, key, algo_name, decrypt)
         
         input('\n\nAppuyer sur entree pour continuer ...')
         clear_screen()
@@ -192,14 +199,17 @@ def handle_modern():
     message = get_message("chiffrer")
     
     def display_res(message, res, algo, key_param, keys, output_format):
+        global N_USE
+        N_USE += 1
         clear_screen()
         print(LOGO_HEADER_SCREEN)
         print('\n')
         print(f'Algorithme : {algo}')
         print(f'Taille de la cle : {key_param}')
-        print(f"Format d'encodage: {OUTPUT_FORMAT[str(output_format)]}")
+        output_format = OUTPUT_FORMAT[str(output_format)]
+        print(f"Format d'encodage: {output_format}")
         print(f"Message: {textwrap.fill(message, width=MINITEL_SCREEN_WHIDTH)}")
-        
+        write_log(f'{algo}, {key_param}, {message}, {output_format}')
         if keys is not None:
             for key_name, key_value in keys.items():
                 print(f"\n{key_name.upper()}:")
@@ -262,7 +272,8 @@ def handle_hash():
     
     if result_bytes is not None:
         formatted_result = format_output(result_bytes, 3)
-        
+        global N_USE
+        N_USE += 1
         clear_screen()
         print(LOGO_HEADER_SCREEN)
         print('\n')
@@ -272,7 +283,7 @@ def handle_hash():
         print('\nMESSAGE HACHE')
         print(formatted_result)
         print('\n')
-        
+        write_log(f'{algo_name}, , {message}, ')
         while True:
             choice = input('Imprimer le resultat ? (o/n) ')
             if choice == "o":
@@ -285,6 +296,7 @@ def handle_hash():
                 print("Choix invalide choisir o pour oui et n pour non.")
         
 def print_ticket(algo, message, ciphertext, keys_param = None, keys = None, format = None, decrypt = None):
+    N_PRINT += 1
     current_datetime = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
     PRINTER.set(align='left', font='a', width=1, height=1)
     PRINTER.text('\n')
@@ -326,7 +338,7 @@ def print_ticket(algo, message, ciphertext, keys_param = None, keys = None, form
         else:
             PRINTER.text(textwrap.fill(ciphertext.replace(' ', ''), width=48) + '\n\n')
     PRINTER.text('-'*48+'\n')
-    PRINTER.text('\n'+current_datetime+'\t  '+ get_base64_uuid())
+    PRINTER.text('\n'+current_datetime)
     PRINTER.cut()
     PRINTER.flush()
 
@@ -347,6 +359,7 @@ def run():
         elif action_choice_key == '3': # Hachage
             handle_hash()
         elif action_choice_key == '4': # Quitter
+            write_counters(COUNTER_FILE, N_USE, N_PRINT)
             clear_screen()
             print(LOGO_HEADER_SCREEN)
             print("             Merci d'avoir utilise l'application de chiffrement!")
