@@ -296,6 +296,7 @@ def handle_hash():
                 print("Choix invalide choisir o pour oui et n pour non.")
         
 def print_ticket(algo, message, ciphertext, keys_param = None, keys = None, format = None, decrypt = None):
+    global N_PRINT
     N_PRINT += 1
     current_datetime = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
     PRINTER.set(align='left', font='a', width=1, height=1)
