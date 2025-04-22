@@ -339,7 +339,8 @@ def print_ticket(algo, message, ciphertext, keys_param = None, keys = None, form
         else:
             PRINTER.text(textwrap.fill(ciphertext.replace(' ', ''), width=48) + '\n\n')
     PRINTER.text('-'*48+'\n\n')
-    end_line = current_datetime + ' '*(MINITEL_SCREEN_WHIDTH-len(current_datetime)-len(str(N_PRINT))) + str(N_PRINT)
+    # end_line = current_datetime + ' '*(48-len(current_datetime)-len(str(N_PRINT))) + str(N_PRINT)
+    end_line = f"{current_datetime:<{48 - len(str(N_PRINT))}}{N_PRINT}"
     PRINTER.text(end_line)
     PRINTER.cut()
     PRINTER.flush()
