@@ -18,14 +18,14 @@ N_USE, N_PRINT = read_counters(COUNTER_FILE)
 
 # --- Constants ---
 ACTIONS_CHOICES = {
-    '1': 'Chiffrer ou dechiffrer un message (Cesar, Vigenere, Enigma)',
-    '2': 'Chiffrer un message (AES, RSA, ECC, El-Gamal)',
-    '3': 'Hacher un message',
-    '4': 'Quitter'
+    # '1': 'Chiffrer ou dechiffrer un message (Cesar, Vigenere, Enigma)',
+    '1': 'Chiffrer un message (AES, RSA, ECC, El-Gamal)',
+    '2': 'Hacher un message',
+    '3': 'Quitter'
 }
 
 ALGORITHMS = {
-    'classical': {'1': 'Cesar', '2': 'Vigenere', '3': 'Enigma'},
+    # 'classical': {'1': 'Cesar', '2': 'Vigenere', '3': 'Enigma'},
     'modern': {'1': 'AES', '2': 'RSA', '3': 'ECC', '4': 'El-Gamal'},
     'hash': {'1': 'SHA-2 256', '2': 'SHA-2 384', '3': 'SHA-2 512',
              '4': 'SHA-3 256', '5': 'SHA-3 384', '6': 'SHA-3 512'}
@@ -44,6 +44,13 @@ OUTPUT_FORMAT = {
     '3': 'Hexadecimal',
     '4': 'Base 64'
 }
+
+def clear_screen():
+        os.system('cls' if os.name == 'nt' else 'clear')
+        
+def new_screen():
+    clear_screen()
+    print(LOGO_HEADER_SCREEN)
 
 def get_base64_uuid():
     uid = uuid.uuid4().bytes
@@ -178,9 +185,9 @@ def handle_classical():
         
         input('\n\nAppuyer sur entree pour continuer ...')
         clear_screen()
-        
     
 def handle_modern():
+    new_screen()
     display_menu("Choisissez un algorithme", ALGORITHMS['modern'])
     algo_choice_key = get_choice("Votre choix : ", ALGORITHMS['modern'].keys())
     algo_name = ALGORITHMS['modern'][algo_choice_key]
@@ -195,7 +202,7 @@ def handle_modern():
         # Certains algos pourraient ne pas avoir de taille de cle selectionnable ici
         print(f"(!) Pas de selection de taille de cle pour {algo_name} dans cette demo.")
         # On pourrait definir une taille par defaut ou demander autrement
-        
+    new_screen()    
     message = get_message("chiffrer")
     
     def display_res(message, res, algo, key_param, keys, output_format):
@@ -245,7 +252,8 @@ def handle_modern():
     elif algo_name == 'El-Gamal':
         res, _, keys = encrypt_elgamal(message, key_param)
     
-    display_menu("Choisissez un format de sortie du hash", OUTPUT_FORMAT)
+    new_screen()
+    display_menu("Choisissez un format de sortie", OUTPUT_FORMAT)
     format_choice = get_choice("Votre choix : ", OUTPUT_FORMAT.keys())
     
     display_res(message, res, algo_name, key_param, keys, format_choice)
@@ -261,12 +269,13 @@ def handle_modern():
             print("Choix invalide choisir o pour oui et n pour non.")
 
 def handle_hash():
+    new_screen()
     display_menu("Choisissez un algorithme de hachage", ALGORITHMS['hash'])
     algo_choice_key = get_choice("Votre choix : ", ALGORITHMS['hash'].keys())
     algo_name = ALGORITHMS['hash'][algo_choice_key]
 
     # print(f"\nAlgorithme choisi : {algo_name}")
-
+    new_screen()
     message = get_message("hacher")
     result_bytes = compute_hashes(message, algo_name)
     
@@ -274,8 +283,7 @@ def handle_hash():
         formatted_result = format_output(result_bytes, 3)
         global N_USE
         N_USE += 1
-        clear_screen()
-        print(LOGO_HEADER_SCREEN)
+        new_screen()
         print('\n')
         print(f'Algorithme : {algo_name}')
         print(f'Message : {message}\n')
@@ -318,7 +326,7 @@ def print_ticket(algo, message, ciphertext, keys_param = None, keys = None, form
             if isinstance(key_value, dict):
                 for k, v in key_value.items():
                     text_formated = format_output(v, format)
-                    PRINTER.text(f'{k}\n')
+                    PRINTER.text(f'{k}:\n')
                     PRINTER.text(text_formated.replace(' ', '')+'\n')
             else:
                 text_formated = format_output(key_value, format)
@@ -345,26 +353,21 @@ def print_ticket(algo, message, ciphertext, keys_param = None, keys = None, form
     PRINTER.cut()
     PRINTER.flush()
 
-def clear_screen():
-        os.system('cls' if os.name == 'nt' else 'clear')
-
 def run():
     while True:
-        clear_screen()
-        print(LOGO_HEADER_SCREEN)
+        new_screen()
         display_menu("Que voulez-vous faire ?", ACTIONS_CHOICES)
         action_choice_key = get_choice("Votre choix : ", ACTIONS_CHOICES.keys())
 
-        if action_choice_key == '1': # Cryptographie classique
-            handle_classical()
-        elif action_choice_key == '2': # Cryptographie moderne
+        # if action_choice_key == '1': # Cryptographie classique
+        #     handle_classical()
+        if action_choice_key == '1': # Cryptographie moderne
             handle_modern()
-        elif action_choice_key == '3': # Hachage
+        elif action_choice_key == '2': # Hachage
             handle_hash()
-        elif action_choice_key == '4': # Quitter
+        elif action_choice_key == '3': # Quitter
             write_counters(COUNTER_FILE, N_USE, N_PRINT)
-            clear_screen()
-            print(LOGO_HEADER_SCREEN)
+            new_screen()
             print("             Merci d'avoir utilise l'application de chiffrement!")
             break
             
