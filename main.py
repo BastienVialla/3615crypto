@@ -1,6 +1,7 @@
 import yaml
 import importlib
 from escpos.printer import LP
+import sys
 
 from ui import *
 from config_loader import load_config
@@ -8,6 +9,8 @@ from logs import write_counters, read_counters
 from config import *
 from crypto import *
 from printer import *
+
+sys.set_int_max_str_digits(10_000)
 
 # --- Globals ---
 PRINTER = LP(printer_name=PRINTER_NAME, autoflush=True)
