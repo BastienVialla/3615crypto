@@ -2,6 +2,7 @@ from datetime import datetime
 from time import sleep
 import random
 
+from ui import normalize_string
 from logos import LOGO_HEADER_PRINTER
 
 PRINTER_WIDTH = 48
@@ -18,12 +19,12 @@ def print_ticket(printer, infos, res, keys = None):
     sleep(.5)
     printer.text(LOGO_HEADER_PRINTER)
     printer.text('\n\n')
-    printer.text(infos)
+    printer.text(normalize_string(infos))
     printer.text('\n')
     if keys is not None:
-        printer.text(keys)
+        printer.text(normalize_string(keys))
         printer.text('\n')
-    printer.text(res)
+    printer.text(normalize_string(res))
     printer.text('\n')
     printer.text(ticket_seperator())
     printer.text('\n')
