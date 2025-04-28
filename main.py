@@ -96,7 +96,7 @@ def run():
                 to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
                     print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
-                    print_ticket(print_infos, print_res, print_key)
+                    print_ticket(PRINTER,print_infos, print_res, print_key)
                 
             elif algo_name == 'ChaCha20':
                 key_size = int(key_param.split(' ')[0])
@@ -136,7 +136,7 @@ def run():
                 to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
                     print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
-                    print_ticket(print_infos, print_res, print_key)
+                    print_ticket(PRINTER,print_infos, print_res, print_key)
                 
             elif algo_name == 'SHA':
                 res = compute_hashes(message, key_param)
@@ -163,7 +163,7 @@ def run():
                 to_print = display_res(print_infos, print_res)
                 if to_print == "o":
                     print_infos, print_res = gen_results(algo_name, algo_description, print_format, PRINTER_WIDTH, res, True)
-                    print_ticket(print_infos, print_res)
+                    print_ticket(PRINTER,print_infos, print_res)
                     
             elif algo_name == 'ECC':
                 res, _, key_elemnts = encrypt_ecc(message, key_param)
@@ -214,7 +214,7 @@ def run():
                 to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
                     print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
-                    print_ticket(print_infos, print_res, print_key)
+                    print_ticket(PRINTER,print_infos, print_res, print_key)
             elif algo_name == 'RSA':
                 key_size = int(key_param.split(' ')[0])
                 res, _, key_elemnts = encrypt_rsa(message, key_size)
@@ -265,7 +265,7 @@ def run():
                 to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
                     print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
-                    print_ticket(print_infos, print_res, print_key)
+                    print_ticket(PRINTER,print_infos, print_res, print_key)
             elif algo_name == "Kyber":
                 res, keys_elements = kyber_encrypt(message, key_param)
                 
@@ -329,7 +329,7 @@ def run():
                 to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
                     print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
-                    print_ticket(print_infos, print_res, print_key)
+                    print_ticket(PRINTER,print_infos, print_res, print_key)
             input("Appuyez sur entrée pour conitnuer ...")
             
 
