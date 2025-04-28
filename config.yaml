@@ -1,0 +1,177 @@
+algorithms:
+  SHA:
+    - description: "Famille d'algorithmes de hachage, permet de créer une empreinte numérique unique."
+    - show: true
+  ChaCha20:
+    - description: "Algorithme de chiffrement par flux."
+    - show: true
+  AES:
+    - description: "Algorithme cryptographique symétrique."
+    - show: true
+  RSA:
+    - description: "Algorithme cryptographique asymétrique reposant sur la factorisation d'entiers."
+    - show: true
+  ECC:
+    - description: "Algorithme cryptographique asymétrique sur courbes elliptiques."
+    - show: true
+  Kyber: 
+    - description: "Algorithme cryptographique post-quantique standard pour la cryptographie hybride."
+    - show: true
+  NTRU:
+    - description: "Algorithme cryptographique post-quantique servant à chiffrer."
+    - show: false
+SHA:
+  - title: "Choisissez une version de SHA."
+  - print_options:
+    - option: 'Binaire (base 2)'
+      show: True
+    - option: 'Nombre (base 10)'
+      show: True
+    - option: 'Hexadécimal (base 16)'
+      show: True
+    - option: 'Base 64'
+      show: True
+  - option: "SHA-2 256"
+    description: "Produit une empreinte de 256 bits."
+    show: true
+  - option: "SHA-2 384"
+    description: "Produit une empreinte de 384 bits."
+    show: true
+  - option: "SHA-2 512"
+    description: "Produit une empreinte de 512 bits."
+    show: true
+  - option: "SHA-3 256"
+    description: "Produit une empreinte de 256 bits."
+    show: true
+  - option: "SHA-3 384"
+    description: "Produit une empreinte de 384 bits."
+    show: true
+  - option: "SHA-3 512"
+    description: "Produit une empreinte de 512 bits."
+    show: true
+AES:
+  - title: "Choisissez la taille de la clé AES."
+  - print_options:
+    - option: 'Binaire (base 2)'
+      show: True
+    - option: 'Nombre (base 10)'
+      show: True
+    - option: 'Hexadécimal (base 16)'
+      show: True
+    - option: 'Base 64'
+      show: True
+  - option: '128 bits'
+    description: "Offre un niveau de sécurité de 128 bits."
+    show: true
+  - option: '192 bits'
+    description: "Offre un niveau de sécurité de 192 bits."
+    show: true
+  - option: '256 bits'
+    description: "Offre un niveau de sécurité de 256 bits."
+    show: true
+RSA:
+  - title: "Choisissez la taille de la clé RSA."
+  - print_options:
+    - option: 'Binaire (base 2)'
+      show: True
+    - option: 'Nombre (base 10)'
+      show: True
+    - option: 'Hexadécimal (base 16)'
+      show: True
+    - option: 'Base 64'
+      show: True
+  - option: "1024 bits"
+    description: "Equivaut à un niveau de sécurité de 80 bits."
+    show: true
+  - option: "2048 bits"
+    description: "Equivaut à un niveau de sécurité de 112 bits."
+    show: false
+  - option: "3072 bits"
+    description: "Equivaut à un niveau de sécurité de 128 bits. (lent)"
+    show: true
+  - option: "7680 bits"
+    description: "Equivaut à un niveau de sécurité de 192 bits. (très lent)"
+    show: true
+  - option: "15360 bits"
+    description: "Equivaut à un niveau de sécurité de 256 bits. (extrèmement lent)"
+    show: true
+ECC:
+  - title: "Choisissez une courbe elliptique."
+  - print_options:
+    - option: 'Binaire (base 2)'
+      show: True
+    - option: 'Nombre (base 10)'
+      show: True
+    - option: 'Hexadécimal (base 16)'
+      show: True
+    - option: 'Base 64'
+      show: True
+  - option: "SECP 256 R1"
+    description: "Equivaut à un niveau de sécurité de 128 bits."
+    show: true
+  - option: "SECP 384 R1"
+    description: "Equivaut à un niveau de sécurité de 192 bits."
+    show: true
+  - option: "SECP 512 R1"
+    description: "Equivaut à un niveau de sécurité de 256 bits."
+    show: true
+ChaCha20:
+  - title: "Choisissez la taille de la clé ChaCha20."
+  - print_options:
+    - option: 'Binaire (base 2)'
+      show: True
+    - option: 'Nombre (base 10)'
+      show: True
+    - option: 'Hexadécimal (base 16)'
+      show: True
+    - option: 'Base 64'
+      show: True
+  # - option: '128 bits'
+  #   description: "Offre un niveau de sécurité de 128 bits."
+  #   show: true
+  # - option: '192 bits'
+  #   description: "Offre un niveau de sécurité de 192 bits."
+  #   show: true
+  - option: '256 bits'
+    description: "Offre un niveau de sécurité de 256 bits."
+    show: true
+Kyber:
+  - title: "Choisissez la taille de la clé Kyber."
+  - print_options:
+    - option: 'Binaire (base 2)'
+      show: True
+    - option: 'Nombre (base 10)'
+      show: True
+    - option: 'Hexadécimal (base 16)'
+      show: True
+    - option: 'Base 64'
+      show: True
+  - option: 'ML-KEM-512'
+    description: "Combine AES 128 bits + Kyber pour offrir un niveau de sécurité de 128 bits."
+    show: true
+  - option: 'ML-KEM-768'
+    description: "Combine AES 192 bits + Kyber pour offrir un niveau de sécurité de 192 bits."
+    show: true
+  - option: 'ML-KEM-1024'
+    description: "Combine AES 256 bits + Kyber pour offrir un niveau de sécurité de 256 bits."
+    show: true
+NTRU:
+  - title: "Choisissez la taille de la clé NTRU."
+  - print_options:
+    - option: 'Binaire (base 2)'
+      show: True
+    - option: 'Nombre (base 10)'
+      show: True
+    - option: 'Hexadécimal (base 16)'
+      show: True
+    - option: 'Base 64'
+      show: True
+  - option: 'NTRU-2048-509'
+    description: "Offre un niveau de sécurité de 128 bits."
+    show: true
+  - option: 'NTRU-2048-677'
+    description: "Offre un niveau de sécurité de 192 bits."
+    show: true
+  - option: 'NTRU-4096-821'
+    description: "Offre un niveau de sécurité de 256 bits."
+    show: true

@@ -1,8 +1,6 @@
 HEXA_CHARS = '0123456789abcdef'
 MINITEL_SCREEN_WHIDTH = 80
 
-QUIT_STR = ":q:"
-
 # Logging
 LOG_DIR = "./logs/"
 COUNTER_FILE = "./logs/counters.txt"
