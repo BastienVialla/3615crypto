@@ -122,6 +122,23 @@ def get_options(options: list):
             i += 1
     return res
 
+def int_to_bytes(n: int) -> bytes:
+    """
+    Converts an integer to its corresponding byte representation.
+
+    Args:
+        n (int): The integer value to be converted to bytes.
+
+    Returns:
+        bytes: The byte representation of the integer in big-endian format.
+
+    Note:
+        If n is zero, returns a single byte containing zero (0x00).
+    """
+    # Convert integer to bytes using big-endian format
+    # Calculate the number of bytes needed by taking the bit length of n and rounding up
+    return n.to_bytes((n.bit_length() + 7) // 8, byteorder='big')
+
 def format_output(data_bytes, format_name):
     """Met en forme les donnees binaires selon le choix de l'utilisateur."""
     

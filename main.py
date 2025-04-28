@@ -62,7 +62,7 @@ def run():
                 key_size = int(key_param.split(' ')[0])
                 res, key = encrypt_aes(message, key_size)
                 
-                def gen_results(algo_name, algo_description, key_param, print_format, max_width, res, ticket = False):
+                def gen_results(message, algo_name, algo_description, key_param, print_format, max_width, res, ticket = False):
                     print_infos = f"Algorithme : {algo_name}\n"
                     prefix = "Info : "
                     info_line = prefix+f"{algo_description}\n"
@@ -70,6 +70,7 @@ def run():
                     print_infos += '\n'
                     print_infos += f"Taille de la clé : {key_param}\n"
                     print_infos += f"Format d'affichage : {print_format}\n"
+                    print_infos += f"Message : {message}\n"
                 
                     print_key = ""
                     for k, v in key.items():
@@ -91,18 +92,18 @@ def run():
                     print_res += "\n"
                     return print_infos, print_res, print_key
                 
-                print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
+                print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
                 
                 to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
-                    print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
-                    print_ticket(PRINTER,print_infos, print_res, print_key)
+                    print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
+                    print_ticket(PRINTER, print_infos, print_res, print_key)
                 
             elif algo_name == 'ChaCha20':
                 key_size = int(key_param.split(' ')[0])
                 res, key = encrypt_chacha20(message, key_size)
                 
-                def gen_results(algo_name, algo_description, key_param, print_format, max_width, res, ticket = False):
+                def gen_results(message, algo_name, algo_description, key_param, print_format, max_width, res, ticket = False):
                     print_infos = f"Algorithme : {algo_name}\n"
                     prefix = "Info : "
                     info_line = prefix+f"{algo_description}\n"
@@ -110,6 +111,7 @@ def run():
                     print_infos += '\n'
                     print_infos += f"Taille de la clé : {key_param}\n"
                     print_infos += f"Format d'affichage : {print_format}\n"
+                    print_infos += f"Message : {message}\n"
                 
                     print_key = ""
                     for k, v in key.items():
@@ -131,23 +133,24 @@ def run():
                     print_res += "\n"
                     return print_infos, print_res, print_key
                 
-                print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
+                print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
                 
                 to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
-                    print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
+                    print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
                     print_ticket(PRINTER,print_infos, print_res, print_key)
                 
             elif algo_name == 'SHA':
                 res = compute_hashes(message, key_param)
                 
-                def gen_results(algo_name, algo_description, print_format, max_width, res, ticket = False):
+                def gen_results(message, algo_name, algo_description, print_format, max_width, res, ticket = False):
                     print_infos = f"Algorithme : {algo_name}\n"
                     prefix = "Info : "
                     info_line = prefix+f"{algo_description}\n"
                     print_infos += textwrap.fill(info_line, max_width, subsequent_indent=" "*len(prefix))
                     print_infos += '\n'
                     print_infos += f"Format d'affichage : {print_format}\n"
+                    print_infos += f"Message : {message}\n"
                 
                     print_res = "EPREINTE NUMERIQUE (HASH) DU MESSAGE\n"
                     res_formatted = format_output(res, print_format)
@@ -158,17 +161,17 @@ def run():
                     print_res += "\n"
                     return print_infos, print_res
                 
-                print_infos, print_res = gen_results(algo_name, algo_description, print_format, MINITEL_SCREEN_WHIDTH, res)
+                print_infos, print_res = gen_results(message, algo_name, algo_description, print_format, MINITEL_SCREEN_WHIDTH, res)
                 
                 to_print = display_res(print_infos, print_res)
                 if to_print == "o":
-                    print_infos, print_res = gen_results(algo_name, algo_description, print_format, PRINTER_WIDTH, res, True)
+                    print_infos, print_res = gen_results(message, algo_name, algo_description, print_format, PRINTER_WIDTH, res, True)
                     print_ticket(PRINTER,print_infos, print_res)
                     
             elif algo_name == 'ECC':
                 res, _, key_elemnts = encrypt_ecc(message, key_param)
                 
-                def gen_results(algo_name, algo_description, key_param, print_format, max_width, res, ticket = False):
+                def gen_results(message, algo_name, algo_description, key_param, print_format, max_width, res, ticket = False):
                     print_infos = f"Algorithme : {algo_name}\n"
                     prefix = "Info : "
                     info_line = prefix+f"{algo_description}\n"
@@ -176,6 +179,7 @@ def run():
                     print_infos += '\n'
                     print_infos += f"Taille de la clé : {key_param}\n"
                     print_infos += f"Format d'affichage : {print_format}\n"
+                    print_infos += f"Message : {message}\n"
                 
                     print_key = ""
                     for k, v in key_elemnts.items():
@@ -209,17 +213,17 @@ def run():
                     print_res += "\n"
                     return print_infos, print_res, print_key
                 
-                print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
+                print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
                 
                 to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
-                    print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
+                    print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
                     print_ticket(PRINTER,print_infos, print_res, print_key)
             elif algo_name == 'RSA':
                 key_size = int(key_param.split(' ')[0])
                 res, _, key_elemnts = encrypt_rsa(message, key_size)
                 
-                def gen_results(algo_name, algo_description, key_param, print_format, max_width, res, ticket = False):
+                def gen_results(message, algo_name, algo_description, key_param, print_format, max_width, res, ticket = False):
                     print_infos = f"Algorithme : {algo_name}\n"
                     prefix = "Info : "
                     info_line = prefix+f"{algo_description}\n"
@@ -227,6 +231,7 @@ def run():
                     print_infos += '\n'
                     print_infos += f"Taille de la clé : {key_param}\n"
                     print_infos += f"Format d'affichage : {print_format}\n"
+                    print_infos += f"Message : {message}\n"
                 
                     print_key = ""
                     for k, v in key_elemnts.items():
@@ -260,16 +265,16 @@ def run():
                     print_res += "\n"
                     return print_infos, print_res, print_key
                 
-                print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
+                print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
                 
                 to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
-                    print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
+                    print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
                     print_ticket(PRINTER,print_infos, print_res, print_key)
             elif algo_name == "Kyber":
                 res, keys_elements = kyber_encrypt(message, key_param)
                 
-                def gen_results(algo_name, algo_description, key_param, print_format, max_width, res, ticket = False):
+                def gen_results(message, algo_name, algo_description, key_param, print_format, max_width, res, ticket = False):
                     print_infos = f"Algorithme : {algo_name}\n"
                     prefix = "Info : "
                     info_line = prefix+f"{algo_description}\n"
@@ -277,6 +282,7 @@ def run():
                     print_infos += '\n'
                     print_infos += f"Taille de la clé : {key_param}\n"
                     print_infos += f"Format d'affichage : {print_format}\n"
+                    print_infos += f"Message : {message}\n"
                 
                     print_key = ""
                     for k, v in keys_elements.items():
@@ -324,11 +330,11 @@ def run():
                         print_res += "\n"
                     return print_infos, print_res, print_key
                 
-                print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
+                print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
                 
                 to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
-                    print_infos, print_res, print_key = gen_results(algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
+                    print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
                     print_ticket(PRINTER,print_infos, print_res, print_key)
             input("Appuyez sur entrée pour conitnuer ...")
             
