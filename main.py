@@ -339,7 +339,7 @@ def run():
                 if to_print == "o":
                     print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
                     print_ticket(PRINTER,print_infos, print_res, print_key)
-            input("Appuyez sur entrée pour conitnuer ...")
+            input("Appuyez sur entree pour conitnuer ...")
             
 
 if __name__ == "__main__":

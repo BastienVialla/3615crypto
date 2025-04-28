@@ -360,7 +360,7 @@ def encrypt_ecc(message: str, curve_name: str = "SECP 256 R1") -> dict:
     curve_map = {
         "SECP 256 R1": ec.SECP256R1(),
         "SECP 384 R1": ec.SECP384R1(),
-        "SECP 521 R1": ec.SECP521R1(),
+        "SECP 512 R1": ec.SECP521R1(),
     }
 
     if curve_name not in curve_map:
