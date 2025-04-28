@@ -14,9 +14,10 @@ def clear_screen():
         
 def new_screen():
     clear_screen()
-    print(LOGO_HEADER_SCREEN)
+    # print(LOGO_HEADER_SCREEN)
     cout = '1 Fr par minute' 
-    print(' '*(MINITEL_SCREEN_WHIDTH-len(cout))+f'{cout}')
+    # print(' '*(MINITEL_SCREEN_WHIDTH-len(cout))+f'{cout}')
+    print(get_logo_header_screen(cout))
     
 def normalize_string(string):
   """
