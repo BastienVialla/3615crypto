@@ -84,7 +84,7 @@ def display_menu(title: str, options: dict):
             else:
                 print(f"{key}. {value}") # Version la plus simple
                 
-    print("\n"+"-" * MINITEL_SCREEN_WHIDTH) # Ligne de séparation simple
+    # print("\n"+"-" * MINITEL_SCREEN_WHIDTH) # Ligne de séparation simple
 
 def get_choice(prompt: str, valid_choices: List[str] | Set[str], to_hide: None | List[str] | Set[str] = None) -> str:
     """
