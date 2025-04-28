@@ -38,6 +38,8 @@ def print_ticket(printer, infos, res, keys = None):
     end_line = f"{current_datetime:<{48 - len(str(cout))}}{cout}"
     printer.text(end_line)
     printer.text('\n')
+    printer.cut()
+    printer.flush()
     
 def print_ticket_(infos, res, keys = None):
     current_datetime = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
