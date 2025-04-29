@@ -14,18 +14,19 @@ from config import MINITEL_SCREEN_WHIDTH
 def clear_screen():
         os.system('cls' if os.name == 'nt' else 'clear')
 
-def slow_print(text, delay=0.008):
-  """Prints text character by character with a delay.
+def slow_print(text, delay=0.008, add_new_line = True):
+    """Prints text character by character with a delay.
 
-  Args:
-    text: The string to print.
-    delay: The time delay (in seconds) between each character.
-  """
-  for char in text:
-    sys.stdout.write(char)
-    sys.stdout.flush()
-    time.sleep(delay)
-  print()
+        Args:
+            text: The string to print.
+            delay: The time delay (in seconds) between each character.
+    """
+    for char in text:
+        sys.stdout.write(char)
+        sys.stdout.flush()
+        time.sleep(delay)
+    if add_new_line:
+        print()
         
 def new_screen():
     clear_screen()
@@ -113,7 +114,7 @@ def get_choice(prompt: str, valid_choices: List[str] | Set[str], to_hide: None |
          return "" # Ou lever une exception
 
     while True:
-        slow_print(prompt)
+        slow_print(prompt, add_new_line=False)
         choice = input().strip()
         if str(choice) in valid_set:
             return choice
