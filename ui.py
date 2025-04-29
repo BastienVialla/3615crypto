@@ -1,5 +1,7 @@
 from __future__ import annotations
 import os
+import sys
+import time
 import unicodedata
 from typing import List, Set
 import textwrap
@@ -11,13 +13,26 @@ from config import MINITEL_SCREEN_WHIDTH
 
 def clear_screen():
         os.system('cls' if os.name == 'nt' else 'clear')
+
+def slow_print(text, delay=0.01):
+  """Prints text character by character with a delay.
+
+  Args:
+    text: The string to print.
+    delay: The time delay (in seconds) between each character.
+  """
+  for char in text:
+    sys.stdout.write(char)
+    sys.stdout.flush()
+    time.sleep(delay)
+  print()
         
 def new_screen():
     clear_screen()
     # print(LOGO_HEADER_SCREEN)
     cout = '1 Fr par minute' 
     # print(' '*(MINITEL_SCREEN_WHIDTH-len(cout))+f'{cout}')
-    print(get_logo_header_screen(cout))
+    slow_print(get_logo_header_screen(cout))
     
 def normalize_string(string):
   """
@@ -72,7 +87,7 @@ def display_menu(title: str, options: dict):
                 line = prefix+description
                 line = normalize_string(line)
                 if len(line) > MINITEL_SCREEN_WHIDTH:
-                    print(textwrap.fill(line, MINITEL_SCREEN_WHIDTH,subsequent_indent=" "*len(prefix)))
+                    slow_print(textwrap.fill(line, MINITEL_SCREEN_WHIDTH,subsequent_indent=" "*len(prefix)))
                     # look for previous space to cut the line
                     # for i in range(MINITEL_SCREEN_WHIDTH, 0, -1):
                     #     if line[i] == " ":
@@ -80,9 +95,9 @@ def display_menu(title: str, options: dict):
                     #         print(' '*(len(prefix)-1)+line[i:])
                     #         break
                 else:
-                    print(line)
+                    slow_print(line)
             else:
-                print(f"{key}. {value}") # Version la plus simple
+                slow_print(f"{key}. {value}") # Version la plus simple
                 
     # print("\n"+"-" * MINITEL_SCREEN_WHIDTH) # Ligne de séparation simple
 
