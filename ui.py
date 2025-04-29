@@ -14,7 +14,7 @@ from config import MINITEL_SCREEN_WHIDTH
 def clear_screen():
         os.system('cls' if os.name == 'nt' else 'clear')
 
-def slow_print(text, delay=0.01):
+def slow_print(text, delay=0.008):
   """Prints text character by character with a delay.
 
   Args:
@@ -50,12 +50,12 @@ def normalize_string(string):
 def get_message():
     new_screen()
     while True:
-        print(normalize_string(f"\nVeuillez entrer le message :"))
+        slow_print(normalize_string(f"\nVeuillez entrer le message :"))
         message = input('> ')
         if len(message) > 0:
             return message
         else:
-            print(normalize_string("Le message ne peut-être vide."))
+            slow_print(normalize_string("Le message ne peut-être vide."))
 
 def display_menu(title: str, options: dict):
     """
@@ -113,8 +113,9 @@ def get_choice(prompt: str, valid_choices: List[str] | Set[str], to_hide: None |
          return "" # Ou lever une exception
 
     while True:
-        choice = input(prompt).strip()
-        if choice in valid_set:
+        slow_print(prompt)
+        choice = input().strip()
+        if str(choice) in valid_set:
             return choice
         else:
             # Construit un message d'erreur plus lisible
@@ -122,7 +123,7 @@ def get_choice(prompt: str, valid_choices: List[str] | Set[str], to_hide: None |
             for x in to_hide:
                 valid_options_str = valid_options_str.replace(x, '')
             valid_options_str = textwrap.fill(valid_options_str, MINITEL_SCREEN_WHIDTH)
-            print(normalize_string(f"Choix invalide. Veuillez entrer un numero parmi : {valid_options_str}"))
+            slow_print(normalize_string(f"Choix invalide. Veuillez entrer un numero parmi : {valid_options_str}"))
 
 def get_options(options: list):
     show = list()
@@ -176,17 +177,18 @@ def format_output(data_bytes, format_name):
 
 def display_res(infos, res, keys = None):
     new_screen()
-    print('\n')
-    print(normalize_string(infos))
-    print('-'*MINITEL_SCREEN_WHIDTH)
-    print('\n')
+    slow_print('\n')
+    slow_print(normalize_string(infos))
+    slow_print('-'*MINITEL_SCREEN_WHIDTH)
+    slow_print('\n')
     if keys is not None:
-        print(normalize_string(keys))    
-    print(normalize_string(res))
+        slow_print(normalize_string(keys))    
+    slow_print(normalize_string(res))
     while True:
-        choice = input('Imprimer le resultat ? (o/n) ')
+        slow_print('Imprimer le resultat ? (o/n) ')
+        choice = input()
         if choice == "o" or choice == "n":
             return choice
         else:
-            print("Choix invalide choisir o pour oui et n pour non.")
+            slow_print("Choix invalide choisir o pour oui et n pour non.")
     
