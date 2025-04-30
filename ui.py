@@ -28,12 +28,28 @@ def slow_print(text, delay=0.008, add_new_line = True):
     if add_new_line:
         print()
         
+def pad_to_screen(text: str):
+    if '\n' in text:
+        lines = text.split('\n')
+    else:
+        lines = [text]
+    res = ''
+    for x in lines:
+       if len(x) < 80:
+           res += x+" "*(MINITEL_SCREEN_WHIDTH-len(x))
+           res += "\n"
+       else:
+           res += x
+           res += "\n"
+    return res
+        
 def new_screen():
     clear_screen()
     # print(LOGO_HEADER_SCREEN)
     cout = '1 Fr par minute' 
     # print(' '*(MINITEL_SCREEN_WHIDTH-len(cout))+f'{cout}')
-    slow_print(get_logo_header_screen(cout))
+    pad_logo = pad_to_screen(get_logo_header_screen(cout))
+    slow_print(pad_logo)
     
 def normalize_string(string):
   """
@@ -88,7 +104,9 @@ def display_menu(title: str, options: dict):
                 line = prefix+description
                 line = normalize_string(line)
                 if len(line) > MINITEL_SCREEN_WHIDTH:
-                    slow_print(textwrap.fill(line, MINITEL_SCREEN_WHIDTH,subsequent_indent=" "*len(prefix)))
+                    to_print = textwrap.fill(line, MINITEL_SCREEN_WHIDTH, subsequent_indent=" "*len(prefix))
+                    to_print = pad_to_screen(to_print)
+                    slow_print(to_print, add_new_line=False)
                     # look for previous space to cut the line
                     # for i in range(MINITEL_SCREEN_WHIDTH, 0, -1):
                     #     if line[i] == " ":
@@ -96,7 +114,7 @@ def display_menu(title: str, options: dict):
                     #         print(' '*(len(prefix)-1)+line[i:])
                     #         break
                 else:
-                    slow_print(line)
+                    slow_print(pad_to_screen(line), add_new_line=False)
             else:
                 slow_print(f"{key}. {value}") # Version la plus simple
                 
@@ -121,8 +139,13 @@ def get_choice(prompt: str, valid_choices: List[str] | Set[str], to_hide: None |
         else:
             # Construit un message d'erreur plus lisible
             valid_options_str = ", ".join(sorted(list(valid_set)))
-            for x in to_hide:
-                valid_options_str = valid_options_str.replace(x, '')
+            if valid_options_str.endswith(', '):
+                valid_options_str = valid_options_str[:-2]
+            if valid_options_str.endswith(','):
+                valid_options_str = valid_options_str[:-1]
+            if to_hide is not None:
+                for x in to_hide:
+                    valid_options_str = valid_options_str.replace(x, '')
             valid_options_str = textwrap.fill(valid_options_str, MINITEL_SCREEN_WHIDTH)
             slow_print(normalize_string(f"Choix invalide. Veuillez entrer un numero parmi : {valid_options_str}"))
 
@@ -179,17 +202,16 @@ def format_output(data_bytes, format_name):
 def display_res(infos, res, keys = None):
     new_screen()
     slow_print('\n')
-    slow_print(normalize_string(infos))
+    slow_print(pad_to_screen(normalize_string(infos)), add_new_line=False)
     slow_print('-'*MINITEL_SCREEN_WHIDTH)
-    slow_print('\n')
     if keys is not None:
-        slow_print(normalize_string(keys))    
-    slow_print(normalize_string(res))
+        slow_print(pad_to_screen(normalize_string(keys)), add_new_line=False)    
+    slow_print(pad_to_screen(normalize_string(res)), add_new_line=False)
     while True:
-        slow_print('Imprimer le resultat ? (o/n) ')
+        slow_print(pad_to_screen('Imprimer le resultat ? (o/n) '), add_new_line=False)
         choice = input()
         if choice == "o" or choice == "n":
             return choice
         else:
-            slow_print("Choix invalide choisir o pour oui et n pour non.")
+            slow_print(pad_to_screen("Choix invalide choisir o pour oui et n pour non."), add_new_line=False)
     
