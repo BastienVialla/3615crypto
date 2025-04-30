@@ -116,7 +116,7 @@ def display_menu(title: str, options: dict):
                 else:
                     slow_print(pad_to_screen(line), add_new_line=False)
             else:
-                slow_print(f"{key}. {value}") # Version la plus simple
+                slow_print(pad_to_screen(f"{key}. {value}"), add_new_line=False) # Version la plus simple
                 
     # print("\n"+"-" * MINITEL_SCREEN_WHIDTH) # Ligne de séparation simple
 
