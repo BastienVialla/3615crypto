@@ -39,12 +39,14 @@ def run():
     algorithms_options = prepare_menu_options(algorithms)
     while True:
         ui.display_menu('Choisissez un algorithme !', algorithms_options)
-        choice = ui.get_choice("Votre choix : ", list(algorithms_options.keys())+[QUIT_STR], [QUIT_STR])
+        choice = ui.get_choice("Votre choix : ", list(algorithms_options.keys())+[QUIT_STR, SPEED_OPTION_MENU_STR], [QUIT_STR, SPEED_OPTION_MENU_STR])
         if choice == QUIT_STR:
             write_counters(COUNTER_FILE, N_USE, N_PRINT)
             ui.display_new_screen()
             ui.print("             Merci d'avoir utilise l'application de chiffrement!")
             return
+        if choice == SPEED_OPTION_MENU_STR:
+            ui.select_print_speed()
         else:
             algo_name = algorithms_options[choice]['option']
             algo_description = algorithms_options[choice]['description']

@@ -1,4 +1,4 @@
-
+import time
 import secrets
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import hashes, padding, serialization
@@ -11,6 +11,8 @@ from cryptography.hazmat.backends import default_backend
 
 import hashlib
 import os
+
+from config import *
 
 def int_to_bytes(n: int) -> bytes:
     """
@@ -104,7 +106,7 @@ def encrypt_aes(message: str, key_size: int = 256, key: bytes = None) -> tuple[b
     # --- Combine Nonce and Ciphertext ---
     # Prepend the nonce to the ciphertext+tag. The recipient will need the nonce
     # (which they can extract from the start of the received data) to decrypt.
-    full_ciphertext = nonce + ciphertext_and_tag
+    full_ciphertext = ciphertext_and_tag
 
     return full_ciphertext, {'cle secrete': key}
 
@@ -199,7 +201,7 @@ def encrypt_chacha20(message: str, key_size: int = 256, key: bytes = None) -> tu
     # --- Combine Nonce and Ciphertext ---
     # Prepend the nonce to the ciphertext+tag. The recipient will need the nonce
     # (which they can extract from the start of the received data) to decrypt.
-    full_ciphertext = nonce + ciphertext_and_tag
+    full_ciphertext = ciphertext_and_tag
 
     return full_ciphertext, {'cle secrete': key}
 
@@ -237,13 +239,41 @@ def encrypt_rsa(message: str, key_size: int = 2048) -> tuple[bytes, dict, dict]:
     # if key_size < 2048:
     #     raise ValueError("Key size must be at least 2048 bits for RSA security.")
 
-    # --- Key Generation ---
-    private_key = rsa.generate_private_key(
-        public_exponent=65537, # Standard public exponent
-        key_size=key_size,
-        backend=default_backend()
-    )
-    public_key = private_key.public_key()
+    private_key_path = RSA_CACHE_DIRECTORY / f"rsa_private_key_{key_size}.pem"
+    public_key_path = RSA_CACHE_DIRECTORY / f"rsa_public_key_{key_size}.pem"
+
+    private_key = None
+    public_key = None
+    
+    # --- Attempt to Load Keys ---
+    if private_key_path.exists() and public_key_path.exists():
+        try:
+            with open(private_key_path, "rb") as key_file:
+                private_key = serialization.load_pem_private_key(
+                    key_file.read(),
+                    password=None, # Assuming no encryption on cached keys
+                    backend=default_backend()
+                )
+            # Get the public key from the loaded private key
+            public_key = private_key.public_key()
+            # if 4096 < key_size < 10_000:
+            #     time.sleep(5)
+            # elif 10_000 < key_size < 15_000:
+            #     time.sleep(15)
+
+        except Exception as e:
+            print(f"Error loading keys: {e}. Generating new keys instead.")
+            private_key = None # Reset to trigger generation
+            public_key = None
+    
+    if private_key is None and public_key is None:
+        # --- Key Generation ---
+        private_key = rsa.generate_private_key(
+            public_exponent=65537, # Standard public exponent
+            key_size=key_size,
+            backend=default_backend()
+        )
+        public_key = private_key.public_key()
 
     # --- Prepare Plaintext ---
     plaintext = message.encode('utf-8')
@@ -281,6 +311,16 @@ def encrypt_rsa(message: str, key_size: int = 2048) -> tuple[bytes, dict, dict]:
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     )
+    
+    if key_size > 4096:
+        try:
+            with open(private_key_path, "wb") as key_file:
+                key_file.write(private_pem)
+            with open(public_key_path, "wb") as key_file:
+                key_file.write(public_pem)
+            print(f"Keys saved to {RSA_CACHE_DIRECTORY}.")
+        except IOError as e:
+            print(f"Warning: Could not save keys to {RSA_CACHE_DIRECTORY}: {e}")
 
     keys_dict = {
         'cle secrete': private_pem.decode('utf-8'),

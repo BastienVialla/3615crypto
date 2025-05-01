@@ -20,6 +20,7 @@ EMPTY_MESSAGE_ERROR: str = "Le message ne peut-être vide."
 PROMPT_INDICATOR: str = "> "
 PRINT_RESULT_PROMPT: str = "Imprimer le resultat ? (o/n) "
 INVALID_PRINT_CHOICE: str = "Choix invalide choisir o pour oui et n pour non."
+SPEED_UPDATED_MSG: str = "Vitesse d'affichage mise à jour."
 
 # Constants for output formats
 FORMAT_HEX = 'Hexadécimal (base 16)'
@@ -27,6 +28,12 @@ FORMAT_B64 = 'Base 64'
 FORMAT_BIN = 'Binaire (base 2)'
 FORMAT_DEC = 'Nombre (base 10)'
 FORMAT_FALLBACK = FORMAT_HEX
+
+# Speed constants
+SPEED_SLOW = 0.008   # Minitel 1
+SPEED_MEDIUM = 0.002 # Minitel 1B+
+SPEED_FAST = 0.001   # Minitel 2+
+SPEED_INSTANT = 0.0  # Temps réel
 
 SUPPORTED_FORMATS = {
     FORMAT_HEX: lambda b: b.hex(),
@@ -235,7 +242,7 @@ class MinitelUI:
             self.print(keys, add_new_line=True)
         self.print(result, add_new_line=True)
         while True:
-            self.print('Imprimer le resultat ? (o/n) ', add_new_line=False)
+            self.print('Imprimer le resultat ? (o/n) ', add_new_line=False, pad_to_streen=False)
             choice = input()
             if choice == "o" or choice == "n":
                 return choice
@@ -254,6 +261,32 @@ class MinitelUI:
                 return False
             else:
                 self.print(INVALID_PRINT_CHOICE) # Reusing this constant, maybe rename
+                
+    def select_print_speed(self):
+        # Define menu options with associated delay values
+        speed_options: MenuOptions = {
+            '1': {'option': 'Lent', 'description': '(Minitel 1)', 'delay': SPEED_SLOW},
+            '2': {'option': 'Moyen', 'description': '(Minitel 1B+)', 'delay': SPEED_MEDIUM},
+            '3': {'option': 'Rapide', 'description': '(Minitel 2+)', 'delay': SPEED_FAST},
+            '4': {'option': 'Temps réel', 'description': '(Instantané)', 'delay': SPEED_INSTANT}
+        }
+        self.display_menu("Choisir la vitesse d'affichage", speed_options)
+
+        valid_choices = set(speed_options.keys())
+        choice_key = self.get_choice("Votre choix ?", valid_choices)
+        
+        # Get the selected option details (which is a dict in this case)
+        selected_option = speed_options[choice_key]
+        if isinstance(selected_option, dict):
+            new_delay = selected_option.get('delay', self.default_delay) # Get delay, fallback to current
+            self.default_delay = new_delay # Update instance's default delay
+            self.print(f"{SPEED_UPDATED_MSG} (Mode: {selected_option.get('option', 'Inconnu')})")
+            time.sleep(1) # Pause briefly to show the confirmation
+        else:
+            # Should not happen if menu is structured correctly
+             self.print("Erreur: Impossible de déterminer la vitesse sélectionnée.")
+             time.sleep(1)
+        
 
 # --- Menu Preparation Logic (Could be part of a larger application structure) ---
 
