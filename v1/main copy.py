@@ -27,23 +27,23 @@ def run():
         print(f"Error loading YAML file: {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")    
-    
-    ui = MinitelUI(default_delay=0.002)
-    
+    #print(options)
+    #return
+    ui = MinitelUI()
     algorithms = list()
     for k, v in options['algorithms'].items():
         tmp = {"option": k}
         for x in v:
             tmp.update(x)
         algorithms.append(tmp)
-    algorithms_options = prepare_menu_options(algorithms)
+    algorithms_options = get_options(algorithms)
     while True:
-        ui.display_menu('Choisissez un algorithme !', algorithms_options)
-        choice = ui.get_choice("Votre choix : ", list(algorithms_options.keys())+[QUIT_STR], [QUIT_STR])
+        display_menu('Choisissez un algorithme !', algorithms_options)
+        choice = get_choice("Votre choix : ", list(algorithms_options.keys())+[QUIT_STR], [QUIT_STR])
         if choice == QUIT_STR:
             write_counters(COUNTER_FILE, N_USE, N_PRINT)
-            ui.display_new_screen()
-            ui.print("             Merci d'avoir utilise l'application de chiffrement!")
+            new_screen()
+            slow_print("             Merci d'avoir utilise l'application de chiffrement!")
             return
         else:
             algo_name = algorithms_options[choice]['option']
@@ -52,15 +52,15 @@ def run():
                 if 'title' in x:
                     title = x['title']
                 if 'print_options' in x:
-                    print_options = prepare_menu_options(x['print_options'])
+                    print_options = get_options(x['print_options'])
             
-            algo_options = prepare_menu_options([x for x in options[algo_name] if 'option' in x])            
-            ui.display_menu(title, algo_options)
-            choice = ui.get_choice("Votre choix : ", list(algo_options.keys()))
+            algo_options = get_options([x for x in options[algo_name] if 'option' in x])            
+            display_menu(title, algo_options)
+            choice = get_choice("Votre choix : ", list(algo_options.keys()))
             key_param = algo_options[choice]['option']
-            message = ui.get_message()
-            ui.display_menu("Choisissez le format d'affichage.", print_options)
-            choice = ui.get_choice("Votre choix : ", list(print_options.keys()))
+            message = get_message()
+            display_menu("Choisissez le format d'affichage.", print_options)
+            choice = get_choice("Votre choix : ", list(print_options.keys()))
             print_format = print_options[choice]['option']
             if algo_name == 'AES':
                 key_size = int(key_param.split(' ')[0])
@@ -81,14 +81,14 @@ def run():
                         print_key += k.upper()
                         print_key += "\n"
                         if ticket:
-                            v_formatted = textwrap.fill(ui.format_output(v, print_format).replace(' ', ''), max_width)
+                            v_formatted = textwrap.fill(format_output(v, print_format).replace(' ', ''), max_width)
                         else:
-                            v_formatted = textwrap.fill(ui.format_output(v, print_format), max_width)
+                            v_formatted = textwrap.fill(format_output(v, print_format), max_width)
                         print_key += v_formatted
                         print_key += "\n"
                 
                     print_res = "MESSAGE CHIFFRE\n"
-                    res_formatted = ui.format_output(res, print_format)
+                    res_formatted = format_output(res, print_format)
                     if ticket:
                             print_res += textwrap.fill(res_formatted.replace(' ', ''), max_width)
                     else:
@@ -98,12 +98,12 @@ def run():
                 
                 print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
                 
-                to_print = ui.display_result(print_infos, print_res, print_key)
+                to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
                     print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
                     print_ticket(PRINTER, print_infos, print_res, print_key)
-                ui.print("Appuyez sur entree pour conitnuer ...")
-                input()
+                    slow_print("Appuyez sur entree pour conitnuer ...")
+                    input()
                 
             elif algo_name == 'ChaCha20':
                 key_size = int(key_param.split(' ')[0])
@@ -124,14 +124,14 @@ def run():
                         print_key += k.upper()
                         print_key += "\n"
                         if ticket:
-                            v_formatted = textwrap.fill(ui.format_output(v, print_format).replace(' ', ''), max_width)
+                            v_formatted = textwrap.fill(format_output(v, print_format).replace(' ', ''), max_width)
                         else:
-                            v_formatted = textwrap.fill(ui.format_output(v, print_format), max_width)
+                            v_formatted = textwrap.fill(format_output(v, print_format), max_width)
                         print_key += v_formatted
                         print_key += "\n"
                 
                     print_res = "MESSAGE CHIFFRE\n"
-                    res_formatted = ui.format_output(res, print_format)
+                    res_formatted = format_output(res, print_format)
                     if ticket:
                             print_res += textwrap.fill(res_formatted.replace(' ', ''), max_width)
                     else:
@@ -141,12 +141,12 @@ def run():
                 
                 print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
                 
-                to_print = ui.display_result(print_infos, print_res, print_key)
+                to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
                     print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
                     print_ticket(PRINTER,print_infos, print_res, print_key)
-                ui.print("Appuyez sur entree pour conitnuer ...")
-                input()
+                    slow_print("Appuyez sur entree pour conitnuer ...")
+                    input()
                 
             elif algo_name == 'SHA':
                 res = compute_hashes(message, key_param)
@@ -161,7 +161,7 @@ def run():
                     print_infos += f"Message : {message}\n"
                 
                     print_res = "EPREINTE NUMERIQUE (HASH) DU MESSAGE\n"
-                    res_formatted = ui.format_output(res, print_format)
+                    res_formatted = format_output(res, print_format)
                     if ticket:
                             print_res += textwrap.fill(res_formatted.replace(' ', ''), max_width)
                     else:
@@ -171,12 +171,12 @@ def run():
                 
                 print_infos, print_res = gen_results(message, algo_name, algo_description, print_format, MINITEL_SCREEN_WHIDTH, res)
                 
-                to_print = ui.display_result(print_infos, print_res)
+                to_print = display_res(print_infos, print_res)
                 if to_print == "o":
                     print_infos, print_res = gen_results(message, algo_name, algo_description, print_format, PRINTER_WIDTH, res, True)
                     print_ticket(PRINTER,print_infos, print_res)
-                ui.print("Appuyez sur entree pour conitnuer ...")
-                input()
+                    slow_print("Appuyez sur entree pour conitnuer ...")
+                    input()
                     
             elif algo_name == 'ECC':
                 res, _, key_elemnts = encrypt_ecc(message, key_param)
@@ -200,22 +200,22 @@ def run():
                                 print_key += kk+" : "
                                 print_key +='\n'
                                 if ticket:
-                                    print_key += textwrap.fill(ui.format_output(vv, print_format).replace(' ', ''), max_width)
+                                    print_key += textwrap.fill(format_output(vv, print_format).replace(' ', ''), max_width)
                                 else:
-                                    print_key += textwrap.fill(ui.format_output(vv, print_format), max_width)
+                                    print_key += textwrap.fill(format_output(vv, print_format), max_width)
                                 print_key += "\n"
                         else:
                             if ticket:
-                                print_key += textwrap.fill(ui.format_output(v, print_format).replace(' ', ''), max_width)
+                                print_key += textwrap.fill(format_output(v, print_format).replace(' ', ''), max_width)
                                 print_key += "\n"
                             else:
-                                print_key += textwrap.fill(ui.format_output(v, print_format), max_width)
+                                print_key += textwrap.fill(format_output(v, print_format), max_width)
                                 print_key += "\n"
                             print_key += "\n"
                         print_key += "\n"
                 
                     print_res = "MESSAGE CHIFFRE\n"
-                    res_formatted = ui.format_output(res, print_format)
+                    res_formatted = format_output(res, print_format)
                     if ticket:
                             print_res += textwrap.fill(res_formatted.replace(' ', ''), max_width)
                     else:
@@ -225,12 +225,12 @@ def run():
                 
                 print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
                 
-                to_print = ui.display_result(print_infos, print_res, print_key)
+                to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
                     print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
                     print_ticket(PRINTER,print_infos, print_res, print_key)
-                ui.print("Appuyez sur entree pour conitnuer ...")
-                input()
+                    slow_print("Appuyez sur entree pour conitnuer ...")
+                    input()
             elif algo_name == 'RSA':
                 key_size = int(key_param.split(' ')[0])
                 res, _, key_elemnts = encrypt_rsa(message, key_size)
@@ -254,22 +254,22 @@ def run():
                                 print_key += kk+" : "
                                 print_key +='\n'
                                 if ticket:
-                                    print_key += textwrap.fill(ui.format_output(vv, print_format).replace(' ', ''), max_width)
+                                    print_key += textwrap.fill(format_output(vv, print_format).replace(' ', ''), max_width)
                                 else:
-                                    print_key += textwrap.fill(ui.format_output(vv, print_format), max_width)
+                                    print_key += textwrap.fill(format_output(vv, print_format), max_width)
                                 print_key += "\n"
                         else:
                             if ticket:
-                                print_key += textwrap.fill(ui.format_output(v, print_format).replace(' ', ''), max_width)
+                                print_key += textwrap.fill(format_output(v, print_format).replace(' ', ''), max_width)
                                 print_key += "\n"
                             else:
-                                print_key += textwrap.fill(ui.format_output(v, print_format), max_width)
+                                print_key += textwrap.fill(format_output(v, print_format), max_width)
                                 print_key += "\n"
                             print_key += "\n"
                         print_key += "\n"
                 
                     print_res = "MESSAGE CHIFFRE\n"
-                    res_formatted = ui.format_output(res, print_format)
+                    res_formatted = format_output(res, print_format)
                     if ticket:
                             print_res += textwrap.fill(res_formatted.replace(' ', ''), max_width)
                     else:
@@ -279,12 +279,12 @@ def run():
                 
                 print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
                 
-                to_print = ui.display_result(print_infos, print_res, print_key)
+                to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
                     print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
                     print_ticket(PRINTER,print_infos, print_res, print_key)
-                ui.print("Appuyez sur entree pour conitnuer ...")
-                input()
+                    slow_print("Appuyez sur entree pour conitnuer ...")
+                    input()
             elif algo_name == "Kyber":
                 res, keys_elements = kyber_encrypt(message, key_param)
                 
@@ -307,16 +307,16 @@ def run():
                                 print_key += kk+" : "
                                 print_key +='\n'
                                 if ticket:
-                                    print_key += textwrap.fill(ui.format_output(vv, print_format).replace(' ', ''), max_width)
+                                    print_key += textwrap.fill(format_output(vv, print_format).replace(' ', ''), max_width)
                                 else:
-                                    print_key += textwrap.fill(ui.format_output(vv, print_format), max_width)
+                                    print_key += textwrap.fill(format_output(vv, print_format), max_width)
                                 print_key += "\n"
                         else:
                             if ticket:
-                                print_key += textwrap.fill(ui.format_output(v, print_format).replace(' ', ''), max_width)
+                                print_key += textwrap.fill(format_output(v, print_format).replace(' ', ''), max_width)
                                 print_key += "\n"
                             else:
-                                print_key += textwrap.fill(ui.format_output(v, print_format), max_width)
+                                print_key += textwrap.fill(format_output(v, print_format), max_width)
                                 print_key += "\n"
                             print_key += "\n"
                         print_key += "\n"
@@ -329,16 +329,16 @@ def run():
                                 print_res += kk+" : "
                                 print_res +='\n'
                                 if ticket:
-                                    print_res += textwrap.fill(ui.format_output(vv, print_format).replace(' ', ''), max_width)
+                                    print_res += textwrap.fill(format_output(vv, print_format).replace(' ', ''), max_width)
                                 else:
-                                    print_res += textwrap.fill(ui.format_output(vv, print_format), max_width)
+                                    print_res += textwrap.fill(format_output(vv, print_format), max_width)
                                 print_res += "\n"
                         else:
                             if ticket:
-                                print_res += textwrap.fill(ui.format_output(v, print_format).replace(' ', ''), max_width)
+                                print_res += textwrap.fill(format_output(v, print_format).replace(' ', ''), max_width)
                                 print_res += "\n"
                             else:
-                                print_res += textwrap.fill(ui.format_output(v, print_format), max_width)
+                                print_res += textwrap.fill(format_output(v, print_format), max_width)
                                 print_res += "\n"
                             print_res += "\n"
                         print_res += "\n"
@@ -346,12 +346,12 @@ def run():
                 
                 print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, MINITEL_SCREEN_WHIDTH, res)
                 
-                to_print = ui.display_result(print_infos, print_res, print_key)
+                to_print = display_res(print_infos, print_res, print_key)
                 if to_print == "o":
                     print_infos, print_res, print_key = gen_results(message, algo_name, algo_description, key_param, print_format, PRINTER_WIDTH, res, True)
                     print_ticket(PRINTER,print_infos, print_res, print_key)
-                ui.print("Appuyez sur entree pour conitnuer ...")
-                input()
+                    slow_print("Appuyez sur entree pour conitnuer ...")
+                    input()
             
 
 if __name__ == "__main__":

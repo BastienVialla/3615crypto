@@ -3,7 +3,7 @@ import os
 import sys
 import time
 import unicodedata
-from typing import List, Set
+from typing import List, Set, Any, Optional, Dict, Union
 import textwrap
 import base64
 
@@ -11,207 +11,265 @@ from logos import *
 from config import MINITEL_SCREEN_WHIDTH
 
 
+# --- Constants ---
+DEFAULT_SLOW_PRINT_DELAY: float = 0.008
+COST_PER_MINUTE_INFO: str = "1 Fr par minute"
+INVALID_CHOICE_PROMPT: str = "Choix invalide."
+PLEASE_ENTER_PROMPT: str = "Veuillez entrer un numero parmi : "
+EMPTY_MESSAGE_ERROR: str = "Le message ne peut-être vide."
+PROMPT_INDICATOR: str = "> "
+PRINT_RESULT_PROMPT: str = "Imprimer le resultat ? (o/n) "
+INVALID_PRINT_CHOICE: str = "Choix invalide choisir o pour oui et n pour non."
+
+# Constants for output formats
+FORMAT_HEX = 'Hexadécimal (base 16)'
+FORMAT_B64 = 'Base 64'
+FORMAT_BIN = 'Binaire (base 2)'
+FORMAT_DEC = 'Nombre (base 10)'
+FORMAT_FALLBACK = FORMAT_HEX
+
+SUPPORTED_FORMATS = {
+    FORMAT_HEX: lambda b: b.hex(),
+    FORMAT_B64: lambda b: base64.b64encode(b).decode('utf-8'),
+    FORMAT_BIN: lambda b: ' '.join(format(byte, '08b') for byte in b),
+    FORMAT_DEC: lambda b: f"{int.from_bytes(b, 'big'):,}".replace(',', ' '),
+}
+
+# Define a type alias for menu option structure for clarity
+MenuOptionDetail = Dict[str, Union[str, bool]] # e.g., {'option': 'Text', 'description': 'Desc', 'show': True}
+MenuOptions = Dict[str, Union[str, MenuOptionDetail]]
+
+def normalize_string(text: str) -> str:
+    """Removes accents and normalizes a string."""
+    try:
+        # Decompose characters into base + combining marks
+        normalized = unicodedata.normalize('NFD', text)
+        # Filter out combining marks (Mn category)
+        return ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
+    except TypeError:
+        # Handle cases where input might not be a string gracefully
+        return str(text) # Or raise a specific error
+
 def clear_screen():
-        os.system('cls' if os.name == 'nt' else 'clear')
-
-def slow_print(text, delay=0.008, add_new_line = True):
-    """Prints text character by character with a delay.
-
-        Args:
-            text: The string to print.
-            delay: The time delay (in seconds) between each character.
-    """
-    for char in text:
-        sys.stdout.write(char)
-        sys.stdout.flush()
-        time.sleep(delay)
-    if add_new_line:
-        print()
-        
-def pad_to_screen(text: str):
-    if '\n' in text:
-        lines = text.split('\n')
-    else:
-        lines = [text]
-    res = ''
-    for x in lines:
-       if len(x) < 80:
-           res += x+" "*(MINITEL_SCREEN_WHIDTH-len(x))
-           res += "\n"
-       else:
-           res += x
-           res += "\n"
-    return res
-        
-def new_screen():
-    clear_screen()
-    # print(LOGO_HEADER_SCREEN)
-    cout = '1 Fr par minute' 
-    # print(' '*(MINITEL_SCREEN_WHIDTH-len(cout))+f'{cout}')
-    pad_logo = pad_to_screen(get_logo_header_screen(cout))
-    slow_print(pad_logo)
-    
-def normalize_string(string):
-  """
-  Normalize a string by removing accents
-  """
-  normalized_string = unicodedata.normalize('NFD', string)
-
-  normalized_string = ''.join([
-      car for car in normalized_string
-      if unicodedata.category(car) != 'Mn'
-  ])
-
-  return normalized_string
-
-def get_message():
-    new_screen()
-    while True:
-        slow_print(normalize_string(f"\nVeuillez entrer le message :"))
-        message = input('> ')
-        if len(message) > 0:
-            return message
-        else:
-            slow_print(normalize_string("Le message ne peut-être vide."))
-
-def display_menu(title: str, options: dict):
-    """
-    Affiche un menu numéroté à partir d'un dictionnaire.
-
-    Args:
-        title (str): Le titre à afficher au-dessus du menu.
-        options (dict): Un dictionnaire où les clés sont les numéros
-                        d'option (str) et les valeurs sont les descriptions (str).
-                        Ex: {'1': 'Option A', '2': 'Option B'}
-    """
-    new_screen()
-    normalized_title = normalize_string(title)
-    print(f"\n--- {normalized_title} ---\n")
-    if not options:
-        print("Aucune option disponible.")
-    else:
-        # Détermine la largeur nécessaire pour les numéros d'option
-        # max_key_width = max(len(key) for key in options.keys()) if options else 0
-        for key, value in options.items():
-            if isinstance(value, dict):
-                if value.get('show', True) == False:
-                    continue
-                title = value['option']
-                description = value.get('description', '')
-                prefix = f'{key}. {title}'
-                if len(description) > 0:
-                    prefix += ' | '
-                line = prefix+description
-                line = normalize_string(line)
-                if len(line) > MINITEL_SCREEN_WHIDTH:
-                    to_print = textwrap.fill(line, MINITEL_SCREEN_WHIDTH, subsequent_indent=" "*len(prefix))
-                    to_print = pad_to_screen(to_print)
-                    slow_print(to_print, add_new_line=False)
-                    # look for previous space to cut the line
-                    # for i in range(MINITEL_SCREEN_WHIDTH, 0, -1):
-                    #     if line[i] == " ":
-                    #         print(line[:i])
-                    #         print(' '*(len(prefix)-1)+line[i:])
-                    #         break
-                else:
-                    slow_print(pad_to_screen(line), add_new_line=False)
-            else:
-                slow_print(pad_to_screen(f"{key}. {value}"), add_new_line=False) # Version la plus simple
-                
-    # print("\n"+"-" * MINITEL_SCREEN_WHIDTH) # Ligne de séparation simple
-
-def get_choice(prompt: str, valid_choices: List[str] | Set[str], to_hide: None | List[str] | Set[str] = None) -> str:
-    """
-    
-    """
-    # Convertir en set pour une recherche efficace, si ce n'est pas déjà le cas
-    valid_set = set(valid_choices)
-    if not valid_set:
-         # Gérer le cas où aucune option n'est valide (ne devrait pas arriver si le menu est bien construit)
-         print(normalize_string("Erreur : Aucune option valide fournie à get_choice."))
-         return "" # Ou lever une exception
-
-    while True:
-        slow_print(prompt, add_new_line=False)
-        choice = input().strip()
-        if str(choice) in valid_set:
-            return choice
-        else:
-            # Construit un message d'erreur plus lisible
-            valid_options_str = ", ".join(sorted(list(valid_set)))
-            if valid_options_str.endswith(', '):
-                valid_options_str = valid_options_str[:-2]
-            if valid_options_str.endswith(','):
-                valid_options_str = valid_options_str[:-1]
-            if to_hide is not None:
-                for x in to_hide:
-                    valid_options_str = valid_options_str.replace(x, '')
-            valid_options_str = textwrap.fill(valid_options_str, MINITEL_SCREEN_WHIDTH)
-            slow_print(normalize_string(f"Choix invalide. Veuillez entrer un numero parmi : {valid_options_str}"))
-
-def get_options(options: list):
-    show = list()
-    for x in options:
-        if x['show']:
-            show.append(x)
-    res = {}
-    i = 1
-    for x in show:
-        if x['show']:
-            res[str(i)] = x
-            i += 1
-    return res
+    """Clears the terminal screen."""
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 def int_to_bytes(n: int) -> bytes:
-    """
-    Converts an integer to its corresponding byte representation.
+    """Converts a non-negative integer to its byte representation (big-endian)."""
+    if n < 0:
+        raise ValueError("Cannot convert negative integers directly to bytes this way.")
+    if n == 0:
+        return b'\x00'
+    # Calculate bytes needed: (bit_length + 7) // 8 ensures correct rounding up
+    num_bytes = (n.bit_length() + 7) // 8
+    return n.to_bytes(num_bytes, byteorder='big')
 
-    Args:
-        n (int): The integer value to be converted to bytes.
+class MinitelUI:
+    """Handles Minitel-like terminal interactions."""
 
-    Returns:
-        bytes: The byte representation of the integer in big-endian format.
+    def __init__(self, screen_width: int = MINITEL_SCREEN_WHIDTH, default_delay: float = DEFAULT_SLOW_PRINT_DELAY):
+        self.screen_width = screen_width
+        self.default_delay = default_delay
 
-    Note:
-        If n is zero, returns a single byte containing zero (0x00).
-    """
-    # Convert integer to bytes using big-endian format
-    # Calculate the number of bytes needed by taking the bit length of n and rounding up
-    return n.to_bytes((n.bit_length() + 7) // 8, byteorder='big')
+    def _pad_line(self, line: str) -> str:
+        """Pads a single line with spaces to fit the screen width."""
+        return line.ljust(self.screen_width)
 
-def format_output(data_bytes, format_name):
-    """Met en forme les donnees binaires selon le choix de l'utilisateur."""
-    
-    # print(f"\n--- Resultat (Format: {format_name}) ---")
-    try:
-        if format_name == 'Hexadécimal (base 16)':
-            return data_bytes.hex()
-        elif format_name == 'Base 64':
-            return base64.b64encode(data_bytes).decode('utf-8')
-        elif format_name == 'Binaire (base 2)':
-            return ' '.join(format(byte, '08b') for byte in data_bytes)
-        elif format_name == 'Nombre (base 10)':
-            # Attention: tres grand pour les hashs/chiffrements longs
-            n = int.from_bytes(data_bytes, 'big')
-            return f"{n:,}".replace(',', ' ')
+    def pad_to_screen_(self, text: str) -> str:
+        """Pads each line of a potentially multi-line string to the screen width."""
+        lines = text.splitlines() # Handles different newline characters
+        padded_lines = [self._pad_line(line) for line in lines]
+        return "\n".join(padded_lines)
+
+    def slow_print_(self, text: str, delay: Optional[float] = None, add_new_line: bool = True):
+        """Prints text character by character with a delay."""
+        # Normalize text before printing
+        if delay is None:
+            delay = self.default_delay
+        normalized_text = normalize_string(text)
+        for char in normalized_text:
+            sys.stdout.write(char)
+            sys.stdout.flush()
+            time.sleep(delay)
+        if add_new_line:
+            print() # Adds a newline at the end
+            
+    def print(self, text: str, delay: Optional[float] = None, add_new_line: bool = True, pad_to_streen: bool = True):
+        if pad_to_streen:
+            text = self.pad_to_screen_(text)
+        self.slow_print_(text, delay=delay, add_new_line=add_new_line)
+
+    def display_new_screen(self, header_info: str = COST_PER_MINUTE_INFO):
+        """Clears the screen and displays the standard header."""
+        clear_screen()
+        # Assume get_logo_header_screen incorporates the header_info
+        logo_header = get_logo_header_screen(header_info)
+        self.print(logo_header, add_new_line=True) # Ensure newline after header
+
+    def display_menu(self, title: str, options: MenuOptions):
+        """Displays a numbered menu from a dictionary of options."""
+        self.display_new_screen() # Start with a fresh screen and header
+        self.print(f"\n--- {normalize_string(title)} ---\n")
+
+        if not options:
+            self.print("Aucune option disponible.")
+            return
+
+        for key, value in options.items():
+            option_text: str = ""
+            description: str = ""
+            display: bool = True
+
+            if isinstance(value, dict):
+                # Handle complex option structure
+                detail: MenuOptionDetail = value # type checking/assertion if needed
+                display = detail.get('show', True)
+                if not display:
+                    continue
+                option_text = detail.get('option', f"Option {key}") # Default text
+                description = detail.get('description', '')
+            elif isinstance(value, str):
+                # Handle simple option structure
+                option_text = value
+            else:
+                # Handle unexpected type
+                self.print(f"Warning: Invalid option format for key '{key}'. Skipping.")
+                continue
+
+            # Format the line
+            prefix = f"{key}. {normalize_string(option_text)}"
+            if description:
+                prefix += f" | {normalize_string(description)}"
+
+            # Wrap text if it exceeds screen width
+            if len(prefix) > self.screen_width:
+                # Initial indent same as prefix up to the first text after number
+                initial_indent = " " * (len(key) + 2) # Length of "N. "
+                # Subsequent indent aligns with the description or option text
+                subsequent_indent = " " * (len(key) + 2)
+                if description:
+                     # Try to align with description if possible
+                     try:
+                         desc_start_col = prefix.index('|') + 2 # Position after " | "
+                         subsequent_indent = " " * desc_start_col
+                     except ValueError:
+                         pass # Fallback to initial indent if '|' not found
+
+                wrapped_text = textwrap.fill(
+                    prefix,
+                    width=self.screen_width,
+                    initial_indent="", # No initial indent for the first line
+                    subsequent_indent=subsequent_indent,
+                    break_long_words=False, # Try not to break words
+                    replace_whitespace=True # Clean up whitespace
+                )
+                self.print(wrapped_text, add_new_line=False)
+            else:
+                # Pad the single line
+                self.print(self._pad_line(prefix), add_new_line=False)
+            print() # Add newline after each menu item
+
+        # Optional: Add a separator line at the end
+        # print("\n" + "-" * self.screen_width)
+
+    def get_choice(self, prompt: str, valid_choices: set[str] | list[str] | str, to_hide: set[str] | list[str] | str = None) -> str:
+        """Prompts the user for input and validates it against a set of valid choices."""
+        if not valid_choices:
+             # Should ideally not happen if called after display_menu with options
+             self.print("Erreur: Aucune option valide fournie.")
+             return "" # Or raise an exception
+        if isinstance(valid_choices, str):
+            valid_choices = [valid_choices]
+        if isinstance(to_hide, str):
+            to_hide = [to_hide]
+        valid_choices = sorted(list(valid_choices))
+        if to_hide is not None:
+            valid_options_str = ", ".join([x for x in valid_choices if x not in to_hide])
         else:
-            return data_bytes.hex() # Fallback
-    except Exception as e:
-        return f"Erreur lors du formatage : {e}"
+            valid_options_str = ", ".join(valid_choices)
 
-def display_res(infos, res, keys = None):
-    new_screen()
-    slow_print('\n')
-    slow_print(pad_to_screen(normalize_string(infos)), add_new_line=False)
-    slow_print('-'*MINITEL_SCREEN_WHIDTH)
-    if keys is not None:
-        slow_print(pad_to_screen(normalize_string(keys)), add_new_line=False)    
-    slow_print(pad_to_screen(normalize_string(res)), add_new_line=False)
-    while True:
-        slow_print(pad_to_screen('Imprimer le resultat ? (o/n) '), add_new_line=False)
-        choice = input()
-        if choice == "o" or choice == "n":
-            return choice
+        while True:
+            self.print(prompt, add_new_line=False, pad_to_streen=False)
+            choice = input(PROMPT_INDICATOR).strip()
+            if choice in valid_choices:
+                return choice
+            else:
+                # Keep the error message simple and clear
+                error_msg = f"{INVALID_CHOICE_PROMPT} {PLEASE_ENTER_PROMPT}{valid_options_str}"
+                # Wrap error message if too long
+                self.print(textwrap.fill(error_msg, self.screen_width))
+
+    def get_message(self, prompt: str = "Veuillez entrer le message :") -> str:
+        """Clears screen, prompts user for a non-empty message, and returns it."""
+        self.display_new_screen()
+        while True:
+            self.print(f"\n{prompt}", add_new_line=True)
+            message = input(PROMPT_INDICATOR).strip()
+            if message:
+                return message
+            else:
+                self.print(self.pad_to_screen(EMPTY_MESSAGE_ERROR))
+
+    def format_output(self, data_bytes: bytes, format_name: str) -> str:
+        """Formats binary data into the specified string format."""
+        formatter = SUPPORTED_FORMATS.get(format_name)
+        if formatter:
+            try:
+                return formatter(data_bytes)
+            except Exception as e:
+                # Log the error potentially
+                self.print(f"\nErreur lors du formatage ({format_name}): {e}", file=sys.stderr)
+                return f"Erreur de formatage ({format_name})"
         else:
-            slow_print(pad_to_screen("Choix invalide choisir o pour oui et n pour non."), add_new_line=False)
-    
+            # Fallback or handle unknown format
+            self.print(f"\nWarning: Format '{format_name}' non reconnu. Utilisation du format par défaut.", file=sys.stderr)
+            return SUPPORTED_FORMATS[FORMAT_FALLBACK](data_bytes)
+
+    def display_result(self, info: str, result: str, keys: Optional[str] = None):
+        """Displays formatted information, optional keys, and the result."""
+        self.display_new_screen()
+        self.print('\n') # Extra spacing
+        self.print(info, add_new_line=True)
+        self.print('-' * self.screen_width, add_new_line=True)
+        if keys:
+            self.print(keys, add_new_line=True)
+        self.print(result, add_new_line=True)
+        while True:
+            self.print('Imprimer le resultat ? (o/n) ', add_new_line=False)
+            choice = input()
+            if choice == "o" or choice == "n":
+                return choice
+            else:
+                self.print("Choix invalide choisir o pour oui et n pour non.", add_new_line=False)
+
+    def confirm_action(self, prompt: str) -> bool:
+        """Asks a yes/no question and returns True for 'o' (oui) and False for 'n' (non)."""
+        prompt_normalized = normalize_string(prompt)
+        while True:
+            self.print(prompt_normalized, add_new_line=False)
+            choice = input(PROMPT_INDICATOR).strip().lower()
+            if choice == 'o':
+                return True
+            elif choice == 'n':
+                return False
+            else:
+                self.print(INVALID_PRINT_CHOICE) # Reusing this constant, maybe rename
+
+# --- Menu Preparation Logic (Could be part of a larger application structure) ---
+
+def prepare_menu_options(options_list: list[dict[str, Any]]) -> MenuOptions:
+    """
+    Filters a list of option dictionaries based on the 'show' key
+    and prepares it for the display_menu function.
+    Example input item: {'option': 'Do X', 'description': 'Runs X', 'show': True, 'action': 'do_x'}
+    """
+    numbered_options: MenuOptions = {}
+    current_number = 1
+    for item in options_list:
+        # Ensure item is a dict and has the 'show' key correctly
+        if isinstance(item, dict) and item.get('show', False):
+            # We can pass the whole dict or just relevant parts
+            # Passing the whole dict simplifies display_menu if it needs other keys later
+            numbered_options[str(current_number)] = item
+            current_number += 1
+    return numbered_options
