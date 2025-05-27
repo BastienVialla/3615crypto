@@ -1,5 +1,5 @@
 import yaml
-import os # To check if file exists
+import os
 
 def load_config(filepath: str = 'algorithms.yaml') -> dict | None:
     """

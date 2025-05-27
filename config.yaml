@@ -31,6 +31,8 @@ SHA:
       show: True
     - option: 'Base 64'
       show: True
+    - option: 'Carte perforee'
+      show: True
   - option: "SHA-2 256"
     description: "Produit une empreinte de 256 bits."
     show: true

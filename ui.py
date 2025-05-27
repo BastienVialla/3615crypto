@@ -28,6 +28,7 @@ FORMAT_B64 = 'Base 64'
 FORMAT_BIN = 'Binaire (base 2)'
 FORMAT_DEC = 'Nombre (base 10)'
 FORMAT_FALLBACK = FORMAT_HEX
+FORMAT_CARTE = "Carte perforee"
 
 # Speed constants
 SPEED_SLOW = 0.008   # Minitel 1
@@ -40,8 +41,27 @@ SUPPORTED_FORMATS = {
     FORMAT_B64: lambda b: base64.b64encode(b).decode('utf-8'),
     FORMAT_BIN: lambda b: ' '.join(format(byte, '08b') for byte in b),
     FORMAT_DEC: lambda b: f"{int.from_bytes(b, 'big'):,}".replace(',', ' '),
+    FORMAT_CARTE: lambda b: format_carte(b),
 }
 
+def format_carte(hash):
+    hash = str(hash.hex())
+    top_line = " ".join(list(" 0123456789abcdef"))
+    res = '\n' + hash + '\n\n'
+    res += top_line + ' |'
+    res += "\n"
+    for c in hash:
+        line = c
+        for h in top_line[1:]:
+            if h != c:
+                line += " "
+            else:
+                line += "*"
+        line += ' |'+'\n'
+        res += line
+    res += '-'*(len(top_line)+2)
+    return res
+    
 # Define a type alias for menu option structure for clarity
 MenuOptionDetail = Dict[str, Union[str, bool]] # e.g., {'option': 'Text', 'description': 'Desc', 'show': True}
 MenuOptions = Dict[str, Union[str, MenuOptionDetail]]

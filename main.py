@@ -28,7 +28,7 @@ def run():
     except Exception as e:
         print(f"An unexpected error occurred: {e}")    
     
-    ui = MinitelUI(default_delay=0.002)
+    ui = MinitelUI(default_delay=0.0008)
     
     algorithms = list()
     for k, v in options['algorithms'].items():
@@ -89,7 +89,7 @@ def run():
                         print_key += v_formatted
                         print_key += "\n"
                 
-                    print_res = "MESSAGE CHIFFRE\n"
+                    print_res = "\nMESSAGE CHIFFRE\n"
                     res_formatted = ui.format_output(res, print_format)
                     if ticket:
                             print_res += textwrap.fill(res_formatted.replace(' ', ''), max_width)
@@ -132,7 +132,7 @@ def run():
                         print_key += v_formatted
                         print_key += "\n"
                 
-                    print_res = "MESSAGE CHIFFRE\n"
+                    print_res = "\nMESSAGE CHIFFRE\n"
                     res_formatted = ui.format_output(res, print_format)
                     if ticket:
                             print_res += textwrap.fill(res_formatted.replace(' ', ''), max_width)
@@ -164,10 +164,13 @@ def run():
                 
                     print_res = "EPREINTE NUMERIQUE (HASH) DU MESSAGE\n"
                     res_formatted = ui.format_output(res, print_format)
-                    if ticket:
-                            print_res += textwrap.fill(res_formatted.replace(' ', ''), max_width)
+                    if print_format != "Carte perforee":
+                        if ticket:
+                                print_res += textwrap.fill(res_formatted.replace(' ', ''), max_width)
+                        else:
+                            print_res += textwrap.fill(res_formatted, max_width)
                     else:
-                        print_res += textwrap.fill(res_formatted, max_width)
+                        print_res += res_formatted
                     print_res += "\n"
                     return print_infos, print_res
                 
