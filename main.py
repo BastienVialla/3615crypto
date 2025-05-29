@@ -1,5 +1,4 @@
 import yaml
-import importlib
 from escpos.printer import LP
 import sys
 
@@ -360,5 +359,4 @@ def run():
             
 
 if __name__ == "__main__":
-    # Initialiser PRINTER ici si ce n'est pas déjà fait globalement
     run()
