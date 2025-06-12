@@ -12,6 +12,7 @@ from cryptography.hazmat.backends import default_backend
 import hashlib
 import os
 
+
 from config import *
 
 def int_to_bytes(n: int) -> bytes:
