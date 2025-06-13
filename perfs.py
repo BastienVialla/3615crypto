@@ -381,6 +381,13 @@ def encrypt_aes(message: str, key_size: int = 256, key: bytes = None) -> tuple[b
 
     return keygen_time, encrypt_time, decrypt_time
 
+gkWh = 32
+TDP_W = 12
+def get_consumption(time_us):
+    time_s = time_us/1_000_000
+    kWh = time_s*TDP_W/(1000*3600)
+    return time_s*TDP_W, kWh*gkWh
+
 N = 1_000_000
 message = b"Coucou"
 start_time = time.perf_counter()
@@ -392,6 +399,9 @@ execution_time_seconds = end_time - start_time
 execution_time_ms = execution_time_seconds * 1_000_000
 execution_time_ms /= N
 print(f"SHA256 executed in {execution_time_ms:.6f} us")
+W, g = get_consumption(execution_time_ms)
+print(f"SHA256 {W} W, {g} gCO2")
+
 
 start_time = time.perf_counter()
 for _ in range(N):
@@ -402,6 +412,8 @@ execution_time_seconds = end_time - start_time
 execution_time_ms = execution_time_seconds * 1_000_000
 execution_time_ms /= N
 print(f"SHA384 executed in {execution_time_ms:.6f} us")
+W, g = get_consumption(execution_time_ms)
+print(f"SHA384 {W} W, {g} gCO2")
 
 start_time = time.perf_counter()
 for _ in range(N):
@@ -412,6 +424,8 @@ execution_time_seconds = end_time - start_time
 execution_time_ms = execution_time_seconds * 1_000_000
 execution_time_ms /= N
 print(f"SHA512 executed in {execution_time_ms:.6f} us")
+W, g = get_consumption(execution_time_ms)
+print(f"SHA512 {W} W, {g} gCO2")
 
 start_time = time.perf_counter()
 for _ in range(N):
@@ -422,6 +436,8 @@ execution_time_seconds = end_time - start_time
 execution_time_ms = execution_time_seconds * 1_000_000
 execution_time_ms /= N
 print(f"SHA3 256 executed in {execution_time_ms:.6f} us")
+W, g = get_consumption(execution_time_ms)
+print(f"SHA3 256 {W} W, {g} gCO2")
 
 start_time = time.perf_counter()
 for _ in range(N):
@@ -432,6 +448,8 @@ execution_time_seconds = end_time - start_time
 execution_time_ms = execution_time_seconds * 1_000_000
 execution_time_ms /= N
 print(f"SHA3 384 executed in {execution_time_ms:.6f} us")
+W, g = get_consumption(execution_time_ms)
+print(f"SHA3 384 {W} W, {g} gCO2")
 
 start_time = time.perf_counter()
 for _ in range(N):
@@ -442,7 +460,10 @@ execution_time_seconds = end_time - start_time
 execution_time_ms = execution_time_seconds * 1_000_000
 execution_time_ms /= N
 print(f"SHA3 512 executed in {execution_time_ms:.6f} us")
+W, g = get_consumption(execution_time_ms)
+print(f"SHA3 512 {W} W, {g} gCO2")
 
+print('\n')
 message = "Coucou"
 for k in [128, 192, 256]:
     keygen_time = 0
@@ -462,7 +483,14 @@ for k in [128, 192, 256]:
     print(f"AES {k} keygen {keygen_time} us")
     print(f"AES {k} encrypt {encrypt_time} us")
     print(f"AES {k} decrypt {decrypt_time} us")
+    W, g = get_consumption(keygen_time)
+    print(f"keygen {W} W, {g} gCO2")
+    W, g = get_consumption(encrypt_time)
+    print(f"encrypt {W} W, {g} gCO2")
+    W, g = get_consumption(decrypt_time)
+    print(f"decrypt {W} W, {g} gCO2")
 
+print('\n')
 message = "Coucou"
 for k in [256]:
     keygen_time = 0
@@ -482,7 +510,14 @@ for k in [256]:
     print(f"ChaCha {k} keygen {keygen_time} us")
     print(f"ChaCha {k} encrypt {encrypt_time} us")
     print(f"ChaCha {k} decrypt {decrypt_time} us")
-    
+    W, g = get_consumption(keygen_time)
+    print(f"keygen {W} W, {g} gCO2")
+    W, g = get_consumption(encrypt_time)
+    print(f"encrypt {W} W, {g} gCO2")
+    W, g = get_consumption(decrypt_time)
+    print(f"decrypt {W} W, {g} gCO2")
+
+print('\n')    
 N = 10
 for k in [1024, 2048, 3072, 7680, 15360]:
     keygen_time = 0
@@ -499,8 +534,12 @@ for k in [1024, 2048, 3072, 7680, 15360]:
     encrypt_time /= N
     print(f"RSA {k} keygen {keygen_time} us")
     print(f"RSA {k} encrypt {encrypt_time} us")
+    W, g = get_consumption(keygen_time)
+    print(f"keygen {W} W, {g} gCO2")
+    W, g = get_consumption(encrypt_time)
+    print(f"encrypt {W} W, {g} gCO2")
 
-
+print('\n')
 N = 100
 for k in ['ML-KEM-512', 'ML-KEM-768', 'ML-KEM-1024']:
     keygen_time = 0
@@ -511,11 +550,16 @@ for k in ['ML-KEM-512', 'ML-KEM-768', 'ML-KEM-1024']:
         encrypt_time += et
     keygen_time *= 1_000_000
     encrypt_time *= 1_000_000
-    keygen_time /= N
-    encrypt_time /= N
+    keygen_time /= N*10
+    encrypt_time /= N*10
     print(f"kyber {k} keygen {keygen_time} us")
     print(f"kyber {k} encrypt {encrypt_time} us")
+    W, g = get_consumption(keygen_time)
+    print(f"keygen {W} W, {g} gCO2")
+    W, g = get_consumption(encrypt_time)
+    print(f"encrypt {W} W, {g} gCO2")
     
+print('\n')
 N = 100
 for k in ['SECP 256 R1', 'SECP 384 R1', 'SECP 512 R1']:
     keygen_time = 0
@@ -530,3 +574,7 @@ for k in ['SECP 256 R1', 'SECP 384 R1', 'SECP 512 R1']:
     encrypt_time /= N
     print(f"ECC {k} keygen {keygen_time} us")
     print(f"ECC {k} encrypt {encrypt_time} us")
+    W, g = get_consumption(keygen_time)
+    print(f"keygen {W} W, {g} gCO2")
+    W, g = get_consumption(encrypt_time)
+    print(f"encrypt {W} W, {g} gCO2")
