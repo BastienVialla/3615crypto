@@ -10,8 +10,8 @@ PRINTER_WIDTH = 48
 def ticket_seperator():
     return '-'*PRINTER_WIDTH
 
-def print_ticket(printer, infos, res, keys = None):
-    current_datetime = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+def print_ticket(printer, infos, res, keys = None, energy = None):
+    current_datetime = datetime.now().strftime("%d-%m-%Y")
     printer.set(align='left', font='a', width=1, height=1)
     printer.text('\n')
     printer.text('\n')
@@ -36,14 +36,18 @@ def print_ticket(printer, infos, res, keys = None):
     n += 9
     c = random.uniform(0, 1) + n*0.1
     cout = f"Prix : {c:.2f} Fr"
-    end_line = f"{current_datetime:<{48 - len(str(cout))}}{cout}"
+    end_line = f"{current_datetime:<{PRINTER_WIDTH - len(str(cout))}}{cout}"
+    if energy is not None:
+        printer.text(normalize_string(energy))
+        printer.text('\n')
+        printer.text('\n')
     printer.text(end_line)
     printer.text('\n')
     printer.cut()
     printer.flush()
     
-def print_ticket_(infos, res, keys = None):
-    current_datetime = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+def print_ticket_(printer, infos, res, keys = None, energy=None):
+    current_datetime = datetime.now().strftime("%d-%m-%Y")
     ticket = ""
     ticket = "\n\n\n"
     ticket += LOGO_HEADER_PRINTER
@@ -55,11 +59,15 @@ def print_ticket_(infos, res, keys = None):
         ticket += '\n'
     ticket += res
     ticket += '\n'
+    c = random.uniform(0, 1) + ticket.count('\n')*0.1
     ticket += ticket_seperator()
     ticket += '\n'
-    c = random.uniform(0, 1) + ticket.count('\n')*0.1
+    if energy is not None:
+        # ticket += ticket_seperator()
+        # ticket += '\n'
+        ticket += energy+'\n\n'
     cout = f"Prix : {c:.2f} Fr"
-    end_line = f"{current_datetime:<{48 - len(str(cout))}}{cout}"
+    end_line = f"{current_datetime:<{PRINTER_WIDTH - len(str(cout))}}{cout}"
     ticket += end_line
     ticket += '\n'
     return ticket

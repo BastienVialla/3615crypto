@@ -252,7 +252,7 @@ class MinitelUI:
             self.print(f"\nWarning: Format '{format_name}' non reconnu. Utilisation du format par défaut.", file=sys.stderr)
             return SUPPORTED_FORMATS[FORMAT_FALLBACK](data_bytes)
 
-    def display_result(self, info: str, result: str, keys: Optional[str] = None):
+    def display_result(self, info: str, result: str, keys: Optional[str] = None, energy: Optional[str] = None):
         """Displays formatted information, optional keys, and the result."""
         self.display_new_screen()
         self.print('\n') # Extra spacing
@@ -260,7 +260,10 @@ class MinitelUI:
         self.print('-' * self.screen_width, add_new_line=True)
         if keys:
             self.print(keys, add_new_line=True)
-        self.print(result, add_new_line=True)
+        self.print(result+'\n', add_new_line=True)
+        if energy:
+            self.print('-' * self.screen_width, add_new_line=True)
+            self.print(energy+'\n', add_new_line=True)
         while True:
             self.print('Imprimer le resultat ? (o/n) ', add_new_line=False, pad_to_streen=False)
             choice = input()
