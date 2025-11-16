@@ -1,4 +1,4 @@
-from config import MINITEL_SCREEN_WHIDTH
+from config import MINITEL_SCREEN_WIDTH
 
 LOGO_HEADER_SCREEN = r"""
                           _____  __   _ ____             
@@ -14,7 +14,7 @@ LOGO_HEADER_SCREEN = r"""
 
 def get_logo_header_screen(c):
   first_line_p1 = "                          _____  __   _ ____"
-  first_line = f"{first_line_p1:<{MINITEL_SCREEN_WHIDTH-len(c)}}{c}\n"
+  first_line = f"{first_line_p1:<{MINITEL_SCREEN_WIDTH-len(c)}}{c}\n"
   logo_header = first_line
   logo_header += r"""                         |___ / / /_ / | ___|            
                            |_ \| '_ \| |___ \            

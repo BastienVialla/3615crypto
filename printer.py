@@ -10,7 +10,7 @@ PRINTER_WIDTH = 48
 def ticket_seperator():
     return '-'*PRINTER_WIDTH
 
-def print_ticket(printer, infos, res, keys = None, energy = None):
+def print_ticket(printer, infos, res, keys = None, energy = None, compute_time = None):
     current_datetime = datetime.now().strftime("%d-%m-%Y")
     printer.set(align='left', font='a', width=1, height=1)
     printer.text('\n')
@@ -36,9 +36,14 @@ def print_ticket(printer, infos, res, keys = None, energy = None):
     n += 9
     c = random.uniform(0, 1) + n*0.1
     cout = f"Prix : {c:.2f} Fr"
-    end_line = f"{current_datetime:<{PRINTER_WIDTH - len(str(cout))}}{cout}"
+    # end_line = f"{current_datetime:<{PRINTER_WIDTH - len(str(cout))}}{cout}"
+    end_line = f"{'':<{PRINTER_WIDTH - len(str(cout))}}{cout}"
     if energy is not None:
         printer.text(normalize_string(energy))
+        printer.text('\n')
+        printer.text('\n')
+    if compute_time is not None:
+        printer.text(normalize_string(compute_time))
         printer.text('\n')
         printer.text('\n')
     printer.text(end_line)

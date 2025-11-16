@@ -8,7 +8,7 @@ import textwrap
 import base64
 
 from logos import *
-from config import MINITEL_SCREEN_WHIDTH
+from config import MINITEL_SCREEN_WIDTH
 
 
 # --- Constants ---
@@ -94,7 +94,7 @@ def int_to_bytes(n: int) -> bytes:
 class MinitelUI:
     """Handles Minitel-like terminal interactions."""
 
-    def __init__(self, screen_width: int = MINITEL_SCREEN_WHIDTH, default_delay: float = DEFAULT_SLOW_PRINT_DELAY):
+    def __init__(self, screen_width: int = MINITEL_SCREEN_WIDTH, default_delay: float = DEFAULT_SLOW_PRINT_DELAY):
         self.screen_width = screen_width
         self.default_delay = default_delay
 
@@ -217,7 +217,7 @@ class MinitelUI:
 
         while True:
             self.print(prompt, add_new_line=False, pad_to_streen=False)
-            choice = input(PROMPT_INDICATOR).strip()
+            choice = input(PROMPT_INDICATOR).strip().lower()
             if choice in valid_choices:
                 return choice
             else:
@@ -232,10 +232,10 @@ class MinitelUI:
         while True:
             self.print(f"\n{prompt}", add_new_line=True)
             message = input(PROMPT_INDICATOR).strip()
-            if message:
+            if message and message != '':
                 return message
             else:
-                self.print(self.pad_to_screen(EMPTY_MESSAGE_ERROR))
+                self.print(EMPTY_MESSAGE_ERROR)
 
     def format_output(self, data_bytes: bytes, format_name: str) -> str:
         """Formats binary data into the specified string format."""
@@ -252,7 +252,7 @@ class MinitelUI:
             self.print(f"\nWarning: Format '{format_name}' non reconnu. Utilisation du format par défaut.", file=sys.stderr)
             return SUPPORTED_FORMATS[FORMAT_FALLBACK](data_bytes)
 
-    def display_result(self, info: str, result: str, keys: Optional[str] = None, energy: Optional[str] = None):
+    def display_result(self, info: str, result: str, keys: Optional[str] = None, energy: Optional[str] = None, compute_time: Optional[str] = None) -> bool:
         """Displays formatted information, optional keys, and the result."""
         self.display_new_screen()
         self.print('\n') # Extra spacing
@@ -264,11 +264,17 @@ class MinitelUI:
         if energy:
             self.print('-' * self.screen_width, add_new_line=True)
             self.print(energy+'\n', add_new_line=True)
+        if compute_time:
+            self.print('-' * self.screen_width, add_new_line=True)
+            self.print(compute_time+'\n', add_new_line=True)
         while True:
             self.print('Imprimer le resultat ? (o/n) ', add_new_line=False, pad_to_streen=False)
             choice = input()
-            if choice == "o" or choice == "n":
-                return choice
+            if choice.lower() in ['o', 'oui', 'n', 'non']:
+                if choice.lower() in ['o', 'oui']:
+                    return True
+                else:
+                    return False
             else:
                 self.print("Choix invalide choisir o pour oui et n pour non.", add_new_line=False)
 
