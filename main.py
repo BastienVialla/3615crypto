@@ -19,7 +19,7 @@ PRINTER = LP(printer_name=PRINTER_NAME, autoflush=True)
 # N_USE, N_PRINT = read_counters(COUNTER_FILE)
 PRINT_FORMAT_OPTIONS = [FORMAT_BIN, FORMAT_DEC, FORMAT_HEX, FORMAT_B64]
 PRINT_FORMAT = PRINT_FORMAT_OPTIONS[1]
-MENU_TIMEOUT_SECONDS = 15  # Timeout for menu selection in seconds
+MENU_TIMEOUT_SECONDS = 60  # Timeout for menu selection in seconds
 
 ALGORITHMS = {
     'aes': {"description": "Algorithme cryptographique symétrique. Utilisé pour le chiffrement de fichiers, WiFi, VPN, HTTPS, Signal, etc."},
@@ -152,9 +152,9 @@ def gen_compute_time(algo_name, max_width):
     elif algo_name == 'kyber':
         compute_time += "Temps pour casser la clé avec un ordinateur quantique (2) : 1.2*10^(26) ans\n\n"
         
-    compute_time += textwrap.fill("(1) Supercalculateur El Capitan 10^18 operations / second", max_width)
+    compute_time += textwrap.fill("(1) Supercalculateur El Capitan 10^18 operations / secondes", max_width)
     compute_time += "\n"
-    compute_time += textwrap.fill("(2) Ordinateur quantique theorique 2 000 000 qbits, 90 000 operations / second", max_width)
+    compute_time += textwrap.fill("(2) Ordinateur quantique theorique 2 000 000 qbits, 90 000 operations / secondes", max_width)
     compute_time += "\n"
     return compute_time
 
