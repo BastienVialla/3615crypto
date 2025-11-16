@@ -204,6 +204,7 @@ def run():
             return
         elif choice == SPEED_OPTION_MENU_STR:
             ui.select_print_speed()
+            continue
         elif choice is None:
             continue  # Timeout or no valid choice, show menu again
         choice = choice.lower()
